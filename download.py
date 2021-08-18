@@ -37,7 +37,11 @@ def youtubeDownload(url, output_dir):
 		print("Done!")
 
 def crDownload(url, output_dir):
-	ydl_opts = {'outtmpl': output_dir + '/%(title)s.%(ext)s'}
+	ydl_opts = {
+		'outtmpl': output_dir + '/%(title)s.%(ext)s',
+		'subtitleslangs': 'it',
+		'writeautomaticsub': True
+	}
 	with youtube_dl.YoutubeDL(ydl_opts) as ydl:
 		print("Downloading: " + url)
 		ydl.download([url])
