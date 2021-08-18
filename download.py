@@ -5,7 +5,7 @@ import youtube_dl
 
 def main():
 	url = []
-	outputDir = os.getcwd()
+	output_dir = os.getcwd()
 	print("START")
 	try:
 		opts, args = getopt.getopt(sys.argv[1:],"hu:o:",["url=","output="])
@@ -18,7 +18,7 @@ def main():
 			sys.exit(2)
 		elif opt in ('-o', 'output'):
 			print("Option: Writing output in: "+arg)
-			outputDir = arg
+			output_dir = arg
 		elif opt in ('-u', 'url'):
 			print("Option: Adding url to list: "+arg)
 			url.append(arg)
@@ -26,16 +26,31 @@ def main():
 		print("parameter: Adding url to list: "+arg)
 		url.append(arg)
 	for u in url:
-		download(u, outputDir)
+		download(u, output_dir)
 	print("Downloaded ", len(url), " urls")
 
-
-def download(url, outputDir):
-	ydl_opts = {'outtmpl': outputDir+'/%(title)s.%(ext)s'}
+def youtubeDownload(url, output_dir):
+	ydl_opts = {'outtmpl': output_dir + '/%(title)s.%(ext)s'}
 	with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-		print("Downloading: "+url)
+		print("Downloading: " + url)
 		ydl.download([url])
 		print("Done!")
+
+def crDownload(url, output_dir):
+	ydl_opts = {'outtmpl': output_dir + '/%(title)s.%(ext)s'}
+	with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+		print("Downloading: " + url)
+		ydl.download([url])
+		print("Done!")
+
+def download(url, output_dir):
+	if 'youtube.com' in url:
+		youtubeDownload(url, output_dir)
+	elif 'crunchyroll.com' in url:
+		crDownload(url, output_dir)
+	else:
+		print("Unsupported provider: [", url, "]")
+
 
 if __name__ == "__main__":
 	main()
