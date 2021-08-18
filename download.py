@@ -3,6 +3,8 @@
 import sys, getopt, os
 import youtube_dl
 
+##Details on paramters here: https://github.com/ytdl-org/youtube-dl/blob/3e4cedf9e8cd3157df2457df7274d0c842421945/youtube_dl/YoutubeDL.py#L137-L312
+
 def main():
 	url = []
 	output_dir = os.getcwd()
@@ -36,11 +38,15 @@ def youtubeDownload(url, output_dir):
 		ydl.download([url])
 		print("Done!")
 
+#TODO Subtitle are not hard impressed
 def crDownload(url, output_dir):
 	ydl_opts = {
+	#	'simulate': True,
+	#	'listsubtitles': True,
 		'outtmpl': output_dir + '/%(title)s.%(ext)s',
-		'subtitleslangs': 'it',
-		'writeautomaticsub': True
+		'subtitleslangs': ['itIT'],
+		'subtitlesformat': 'ass',
+		'writesubtitles': True
 	}
 	with youtube_dl.YoutubeDL(ydl_opts) as ydl:
 		print("Downloading: " + url)
