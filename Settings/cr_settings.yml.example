@@ -1,0 +1,43 @@
+GlobalSettings:
+  
+  #The accuracy level on logging
+  logLevel: "INFO"
+
+  #True if we want to enable command line parameter parsing
+  commandLineEnabled: True
+
+  #The output format of downloaded files by generic downloader - Required parameter
+  'outtmpl': "/destination/path/%(title)s.%(ext)s"
+
+  #Temporary directory
+  'tempDir': "/tmp"
+
+CrunchyrollSettings:
+
+  #The output format of downloaded files by Crunchyroll - Required parameter
+  'outtmpl': "/destination/path/%(title)s.%(ext)s"
+  
+  #The list of subtitles languages to download (Must be a list)
+  'subtitleslangs':
+    - 'itIT'
+  
+  #True to shut down youtube_dl verbose output
+  'quiet': True
+  
+  #The preferred format of subtitle
+  'subtitlesformat': 'ass'
+  
+  #If set to true it will download subtitles to a file
+  'writesubtitles': True
+  
+  #If set to true this setting will request youtube_dl postprocessor to embed subtitle in the video
+  'impress_sub': True
+
+  #True to avoid the use of unwanted characters
+  'restrictfilenames': True
+
+  #True to avoid software crash in case of errors
+  'ignoreerrors': True
+
+  #Seconds to sleep between downloads
+  'sleep_interval': 15

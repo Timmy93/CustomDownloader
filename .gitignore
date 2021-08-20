@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 .idea
-*.log
+Settings/*.yml
+Settings/*.ini
