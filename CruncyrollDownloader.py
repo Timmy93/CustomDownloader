@@ -68,16 +68,18 @@ class CrunchyrollDownloader:
 				print("Downloading: " + url)
 				result = ydl.extract_info("{}".format(url))
 				title = ydl.prepare_filename(result)
-				self.logging.info("Preparing download of: ", title)
-				print("Preparing download of: ", title)
+				self.logging.info("Preparing download of: " + str(title))
+				print("Preparing download of: " + str(title))
 				ydl.download([url])
 				print("Done!")
+				# TODO Use title to move file from and to temp directory
 
 	def compose_option(self, settings):
 		# Creates the option to pass to youtube_dl
-		output_settings = {}
-		self.options['progress_hooks'] = [my_hook]
-		self.options['logger'] = self.logging.getLogger()
+		output_settings = {
+			'progress_hooks': [my_hook],
+			'logger': self.logging.getLogger()
+		}
 		# Fill required parameters
 		for key in self.requiredParameters:
 			if key in settings:
@@ -100,7 +102,7 @@ class CrunchyrollDownloader:
 
 		if 'impress_sub' in settings:
 			if settings['impress_sub'] is True:
-				self.options['postprocessors'] = [{'key': 'FFmpegEmbedSubtitle'}]
+				output_settings['postprocessors'] = [{'key': 'FFmpegEmbedSubtitle'}]
 		else:
 			if 'subtitleslangs' in settings:
 				self.logging.warning("Requested subtitles but not impressing in the video source")

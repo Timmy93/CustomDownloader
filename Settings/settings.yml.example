@@ -1,21 +1,21 @@
 GlobalSettings:
   
   #The accuracy level on logging
-  logLevel: "INFO"
+  logLevel: 'INFO'
 
   #True if we want to enable command line parameter parsing
   commandLineEnabled: True
 
   #The output format of downloaded files by generic downloader - Required parameter
-  'outtmpl': "/destination/path/%(title)s.%(ext)s"
+  'outtmpl': '/destination/path/%(title)s.%(ext)s'
 
   #Temporary directory
-  'tempDir': "/tmp"
+  'tempDir': '/tmp'
 
 CrunchyrollSettings:
 
   #The output format of downloaded files by Crunchyroll - Required parameter
-  'outtmpl': "/destination/path/%(title)s.%(ext)s"
+  'outtmpl': '/destination/path/%(title)s.%(ext)s'
   
   #The list of subtitles languages to download (Must be a list)
   'subtitleslangs':

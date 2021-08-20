@@ -32,7 +32,7 @@ def main():
 	setting_path = os.path.join(all_settings_dir, setting_file)
 	with open(create_absolute_path(setting_path), 'r') as stream:
 		try:
-			config = yaml.load(stream)
+			config = yaml.safe_load(stream)
 			logging.getLogger().setLevel(config['GlobalSettings']['logLevel'])
 			logging.info('Loaded settings started')
 		except yaml.YAMLError as exc:
