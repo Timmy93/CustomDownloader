@@ -58,11 +58,18 @@ class CrunchyrollDownloader:
 		self.options = self.compose_option(settings)
 
 	def request_download(self, url):
-		# Add the requested url to the list of files to download
+		"""
+		Add the requested url to the list of files to download
+		:param url: The url to manage
+		:return:
+		"""
 		self.urls.append(url)
 
-	def start_download(self):
-		# Start the download of requested url
+	def start_download(self) -> None:
+		"""
+		Start the download of requested url
+		:return:
+		"""
 		with youtube_dl.YoutubeDL(self.options) as ydl:
 			for url in self.urls:
 				print("Downloading: " + url)
@@ -75,7 +82,11 @@ class CrunchyrollDownloader:
 				# TODO Use title to move file from and to temp directory
 
 	def compose_option(self, settings):
-		# Creates the option to pass to youtube_dl
+		"""
+		Creates the option to pass to youtube_dl
+		:param settings: An object containing a list of settings
+		:return: A parsed object ready to be passed to youtube-dl
+		"""
 		output_settings = {
 			'progress_hooks': [my_hook],
 			'logger': self.logging.getLogger()
