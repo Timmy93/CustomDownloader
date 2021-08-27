@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-# from __future__ import unicode_literals
 import getopt
 import logging
 import os
 import sys
 import youtube_dl
-import yaml
-
+from Configuration import Configuration
 from CruncyrollDownloader import CrunchyrollDownloader
 
 # Details on parameters here:
@@ -15,14 +13,14 @@ from CruncyrollDownloader import CrunchyrollDownloader
 logName = "Downloader.log"
 all_settings_dir = "Settings"
 setting_file = "settings.yml"
-
+config_class = None
 tested_host = [
 	'youtube.com',
 ]
 
 
 def main():
-	global logName, setting_file, all_settings_dir
+	global logName, setting_file, all_settings_dir, config_class
 	logging.basicConfig(
 		filename=create_absolute_path(logName),
 		level=logging.ERROR,
@@ -30,19 +28,10 @@ def main():
 	url = []
 	# output_dir = os.getcwd()
 	setting_path = os.path.join(all_settings_dir, setting_file)
-	with open(create_absolute_path(setting_path), 'r') as stream:
-		try:
-			config = yaml.safe_load(stream)
-			logging.getLogger().setLevel(config['GlobalSettings']['logLevel'])
-			logging.info('Loaded settings started')
-		except yaml.YAMLError as exc:
-			print("Cannot load file: [" + setting_path + "] - Error: " + str(exc))
-			logging.error("Cannot load file: [" + setting_path + "] - Error: " + str(exc))
-			exit()
+	config_class = Configuration(setting_path)
 
-	if config['GlobalSettings']['commandLineEnabled']:
+	if config_class.get_config('GlobalSettings', 'commandLineEnabled'):
 		parameters = retrieve_command_line_parameters()
-		# output_dir = parameters['output_dir'] if 'output_dir' in parameters else output_dir
 		url += parameters['url']
 
 	download(url, config)
@@ -97,6 +86,9 @@ def download(urls, settings):
 
 	cr.start_download()
 
+def get_settings(name=None):
+	if name is None:
+		return
 
 def create_absolute_path(path):
 	# Check if the given path is an absolute path

@@ -1,3 +1,4 @@
+import shutil
 import youtube_dl
 import os
 from datetime import timedelta
@@ -55,6 +56,8 @@ class CrunchyrollDownloader:
 	def __init__(self, settings, logging_handler):
 		self.logging = logging_handler
 		self.urls = []
+		self.tempDir = None
+		self.finalDir = None
 		self.options = self.compose_option(settings)
 
 	def request_download(self, url):
@@ -78,8 +81,10 @@ class CrunchyrollDownloader:
 				self.logging.info("Preparing download of: " + str(title))
 				print("Preparing download of: " + str(title))
 				ydl.download([url])
+				if self.tempDir:
+					shutil.move(os.path.join(self.tempDir, title), self.finalDir)
+					print("Moved "+title+" from ["+self.finalDir+"] to ["+self.tempDir+"]")
 				print("Done!")
-				# TODO Use title to move file from and to temp directory
 
 	def compose_option(self, settings):
 		"""
@@ -107,6 +112,16 @@ class CrunchyrollDownloader:
 				self.logging.debug("Missing optional parameter " + key + " - Skip")
 
 		# Execute further checks
+		self.finalDir = os.path.dirname(settings['outtmpl'])
+		if 'tempDir' in settings:
+			self.tempDir = settings['tempDir']
+			output_settings['outtmpl'] = os.path.join(self.tempDir, os.path.basename(settings['outtmpl']))
+			self.logging.info(
+				"Using temp dir: [" + output_settings['outtmpl'] + "] and finally move to final dir: [" + settings['outtmpl'] + "]")
+		else:
+			self.logging.warning(
+				"Not using temp directory, downloading directly to [" + output_settings['outtmpl'] + "]")
+
 		if 'subtitleslangs' in output_settings and not isinstance(output_settings['subtitleslangs'], list):
 			self.logging.warning("Requested subtitles as list, not as single value - Try repairing")
 			output_settings['subtitleslangs'] = [output_settings['subtitleslangs']]

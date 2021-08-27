@@ -9,7 +9,7 @@ GlobalSettings:
   #The output format of downloaded files by generic downloader - Required parameter
   'outtmpl': '/destination/path/%(title)s.%(ext)s'
 
-  #Temporary directory
+  #Temporary directory - Insert only the path, not the instruction on the final name
   'tempDir': '/tmp'
 
 CrunchyrollSettings:
