@@ -13,14 +13,13 @@ from CruncyrollDownloader import CrunchyrollDownloader
 logName = "Downloader.log"
 all_settings_dir = "Settings"
 setting_file = "settings.yml"
-config_class = None
 tested_host = [
 	'youtube.com',
 ]
 
 
 def main():
-	global logName, setting_file, all_settings_dir, config_class
+	global logName, setting_file, all_settings_dir
 	logging.basicConfig(
 		filename=create_absolute_path(logName),
 		level=logging.ERROR,
@@ -28,13 +27,16 @@ def main():
 	url = []
 	# output_dir = os.getcwd()
 	setting_path = os.path.join(all_settings_dir, setting_file)
-	config_class = Configuration(setting_path)
+	config_class = Configuration(setting_path, logging)
 
 	if config_class.get_config('GlobalSettings', 'commandLineEnabled'):
+		logging.debug("Retrieving files from command line")
 		parameters = retrieve_command_line_parameters()
 		url += parameters['url']
+	else:
+		logging.debug("Command line disabled, settings value: " + str(config_class.get_config('GlobalSettings', 'commandLineEnabled')))
 
-	download(url, config)
+	download(url, config_class)
 
 	print("Downloaded ", len(url), " urls")
 
@@ -66,7 +68,7 @@ def retrieve_command_line_parameters():
 
 
 def generic_download(url, settings):
-	ydl_opts = {'outtmpl': settings['GlobalSettings']['outtmpl']}
+	ydl_opts = {'outtmpl': settings.get_config('GlobalSettings', 'outtmpl')}
 	with youtube_dl.YoutubeDL(ydl_opts) as ydl:
 		print("Downloading: " + url)
 		ydl.download([url])
@@ -74,8 +76,7 @@ def generic_download(url, settings):
 
 
 def download(urls, settings):
-	# TODO Add local temp for download
-	cr = CrunchyrollDownloader(settings['CrunchyrollSettings'], logging)
+	cr = CrunchyrollDownloader(settings, logging)
 	for url in urls:
 		if 'crunchyroll.com' in url:
 			cr.request_download(url)
@@ -86,9 +87,11 @@ def download(urls, settings):
 
 	cr.start_download()
 
+
 def get_settings(name=None):
 	if name is None:
 		return
+
 
 def create_absolute_path(path):
 	# Check if the given path is an absolute path

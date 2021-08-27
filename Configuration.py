@@ -47,15 +47,19 @@ class Configuration:
 				raise Exception("Missing required section [" + section + "] from loaded configuration")
 		elif section in self.config and name is None:
 			# Requested existent section - Return entire section
-			return self.coalesce_section(section)
+			self.logging.info("Retrieving entire section: [" + section + "]")
+			return self.coalesce_section(self.config[section])
 		else:
 			# Requested specific value
-			if name not in self.coalesce_section(section):
-				self.logging.info("Missing value [" + name + "] from section [" + section + "]")
+			if name not in self.coalesce_section(self.config[section]):
+				self.logging.warning("Missing value [" + name + "] from section [" + section + "]")
 				if fail_silently:
 					return None
 				else:
 					raise Exception("Missing required value [" + name + "] from section [" + section + "]")
+			else:
+				self.logging.debug("Retrieving value [" + name + "] from section: [" + section + "]")
+				return self.coalesce_section(self.config[section])[name]
 
 	def coalesce_section(self, first_section, second_section=None):
 		"""
@@ -66,5 +70,5 @@ class Configuration:
 		:return: The joined values
 		"""
 		if second_section is None:
-			second_section = self.mainSection
+			second_section = self.config[self.mainSection]
 		return {**second_section, **first_section}

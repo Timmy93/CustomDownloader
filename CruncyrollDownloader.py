@@ -39,6 +39,8 @@ class MissingRequiredParameter(Exception):
 
 class CrunchyrollDownloader:
 
+	sectionName = 'CrunchyrollSettings'
+
 	requiredParameters = [
 		'outtmpl',
 	]
@@ -58,7 +60,7 @@ class CrunchyrollDownloader:
 		self.urls = []
 		self.tempDir = None
 		self.finalDir = None
-		self.options = self.compose_option(settings)
+		self.options = self.compose_option(settings.get_config(self.sectionName))
 
 	def request_download(self, url):
 		"""
@@ -82,8 +84,13 @@ class CrunchyrollDownloader:
 				print("Preparing download of: " + str(title))
 				ydl.download([url])
 				if self.tempDir:
-					shutil.move(os.path.join(self.tempDir, title), self.finalDir)
-					print("Moved "+title+" from ["+self.finalDir+"] to ["+self.tempDir+"]")
+					try:
+						shutil.move(os.path.join(self.tempDir, title), self.finalDir)
+						self.logging.debug("Moved " + title + " from ["+self.finalDir+"] to ["+self.tempDir+"]")
+						print("Moved " + title + " from ["+self.finalDir+"] to ["+self.tempDir+"]")
+					except FileNotFoundError:
+						self.logging.warning('Cannot find downloaded file: ' + title)
+						print('Cannot find file: ' + title)
 				print("Done!")
 
 	def compose_option(self, settings):
