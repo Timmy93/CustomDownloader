@@ -1,0 +1,20 @@
+<!doctype html>
+<title>IUB - Download Manager</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<nav>
+  <h1>IUB - Download Manager</h1>
+</nav>
+<section class="content">
+  {% for key, value in get_urls().items() %}
+    <h1>{{ key }}</h1>
+    {% for url in value %}
+      <div class="queue">{{ url }}</div>
+    {% endfor %}
+ {% endfor %}
+  <form method="post">
+    <label for="new_url">Url</label>
+    <input name="new_url" id="new_url" required>
+    <input type="submit" value="Request url">
+  </form>
+</section>
+

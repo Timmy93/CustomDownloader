@@ -3,9 +3,10 @@ import getopt
 import logging
 import os
 import sys
-import youtube_dl
 from Configuration import Configuration
-from CruncyrollDownloader import CrunchyrollDownloader
+from DownloaderManager import DownloaderManager
+from flask import Flask, request, render_template
+from markupsafe import escape
 
 # Details on parameters here:
 #   https://github.com/ytdl-org/youtube-dl/blob/3e4cedf9e8cd3157df2457df7274d0c842421945/youtube_dl/YoutubeDL.py#L137-L312
@@ -13,36 +14,40 @@ from CruncyrollDownloader import CrunchyrollDownloader
 logName = "Downloader.log"
 all_settings_dir = "Settings"
 setting_file = "settings.yml"
-tested_host = [
-	'youtube.com',
-]
+app = Flask(__name__)
+dm: DownloaderManager
 
 
 def main():
-	global logName, setting_file, all_settings_dir
+	global logName, setting_file, all_settings_dir, dm
 	logging.basicConfig(
 		filename=create_absolute_path(logName),
 		level=logging.ERROR,
 		format='%(asctime)s %(levelname)-8s %(message)s')
-	url = []
-	# output_dir = os.getcwd()
 	setting_path = os.path.join(all_settings_dir, setting_file)
 	config_class = Configuration(setting_path, logging)
+
+	print("Starting...")
+	dm = DownloaderManager(config_class, logging)
 
 	if config_class.get_config('GlobalSettings', 'commandLineEnabled'):
 		logging.debug("Retrieving files from command line")
 		parameters = retrieve_command_line_parameters()
-		url += parameters['url']
+		for url in parameters['url']:
+			dm.request_download(url)
 	else:
 		logging.debug("Command line disabled, settings value: " + str(config_class.get_config('GlobalSettings', 'commandLineEnabled')))
 
-	download(url, config_class)
-
-	print("Downloaded ", len(url), " urls")
+	dm.start()
+	app.jinja_env.globals.update(get_urls=get_urls)
+	app.run(port=5081, host='0.0.0.0', debug=True, use_reloader=False)
+	dm.join()
+	print("Download Manager has stopped working - Killing process")
+	logging.error("Download Manager has stopped working - Killing process")
+	exit(1)
 
 
 def retrieve_command_line_parameters():
-	print("START")
 	result = {
 		'url': []
 	}
@@ -67,32 +72,6 @@ def retrieve_command_line_parameters():
 	return result
 
 
-def generic_download(url, settings):
-	ydl_opts = {'outtmpl': settings.get_config('GlobalSettings', 'outtmpl')}
-	with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-		print("Downloading: " + url)
-		ydl.download([url])
-		print("Done!")
-
-
-def download(urls, settings):
-	cr = CrunchyrollDownloader(settings, logging)
-	for url in urls:
-		if 'crunchyroll.com' in url:
-			cr.request_download(url)
-		else:
-			if not any([x in url for x in tested_host]):
-				print("Attempting download - Unknown provider: [", url, "]")
-			generic_download(url, settings)
-
-	cr.start_download()
-
-
-def get_settings(name=None):
-	if name is None:
-		return
-
-
 def create_absolute_path(path):
 	# Check if the given path is an absolute path
 	if not os.path.isabs(path):
@@ -100,6 +79,23 @@ def create_absolute_path(path):
 		path = os.path.join(current_dir, path)
 
 	return path
+
+
+def get_urls():
+	return dm.get_queue()
+
+
+@app.route("/add", methods=['POST'])
+def test1():
+	new_url = request.form.get('new_url')
+	dm.request_download(new_url)
+	print("Added new url [" + new_url + "]")
+	return escape("Added new url [" + new_url + "]")
+
+
+@app.route("/add", methods=['GET'])
+def add_url_interface():
+	return render_template('base.html')
 
 
 if __name__ == "__main__":

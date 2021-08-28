@@ -1,2 +1,4 @@
 youtube-dl
-pyyaml
+pyyaml~=5.4.1
+flask~=2.0.1
+MarkupSafe~=2.0.1
