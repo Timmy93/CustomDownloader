@@ -3,7 +3,8 @@ import getopt
 import logging
 import os
 import sys
-from Configuration import Configuration
+from IUBConfiguration import IUBConfiguration
+
 from DownloaderManager import DownloaderManager
 from flask import Flask, request, render_template
 from markupsafe import escape
@@ -20,12 +21,13 @@ dm: DownloaderManager
 
 def main():
 	global logName, setting_file, all_settings_dir, dm
+
 	logging.basicConfig(
-		filename=Configuration.create_absolute_path(logName),
+		filename=IUBConfiguration.create_absolute_path(logName),
 		level=logging.ERROR,
 		format='%(asctime)s %(levelname)-8s %(message)s')
-	setting_path = Configuration.create_absolute_path(os.path.join(all_settings_dir, setting_file))
-	config_class = Configuration(setting_path, logging)
+	setting_path = IUBConfiguration.create_absolute_path(os.path.join(all_settings_dir, setting_file))
+	config_class = IUBConfiguration(setting_path, logging)
 
 	print("Starting...")
 	dm = DownloaderManager(config_class, logging)
