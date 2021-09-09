@@ -26,7 +26,7 @@ class Configuration:
 	def create_absolute_path(path):
 		# Check if the given path is an absolute path
 		if not os.path.isabs(path):
-			current_dir = os.path.dirname(os.path.realpath(__file__))
+			current_dir = os.path.dirname(os.path.abspath(__file__))
 			path = os.path.join(current_dir, path)
 		return path
 
