@@ -24,7 +24,7 @@ def main():
 		filename=create_absolute_path(logName),
 		level=logging.ERROR,
 		format='%(asctime)s %(levelname)-8s %(message)s')
-	setting_path = os.path.join(all_settings_dir, setting_file)
+	setting_path = Configuration.create_absolute_path(os.path.join(all_settings_dir, setting_file))
 	config_class = Configuration(setting_path, logging)
 
 	print("Starting...")
