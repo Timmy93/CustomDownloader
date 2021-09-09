@@ -21,7 +21,7 @@ dm: DownloaderManager
 def main():
 	global logName, setting_file, all_settings_dir, dm
 	logging.basicConfig(
-		filename=create_absolute_path(logName),
+		filename=Configuration.create_absolute_path(logName),
 		level=logging.ERROR,
 		format='%(asctime)s %(levelname)-8s %(message)s')
 	setting_path = Configuration.create_absolute_path(os.path.join(all_settings_dir, setting_file))
@@ -70,15 +70,6 @@ def retrieve_command_line_parameters():
 		print("parameter: Adding url to list: " + arg)
 		result['url'].append(arg)
 	return result
-
-
-def create_absolute_path(path):
-	# Check if the given path is an absolute path
-	if not os.path.isabs(path):
-		current_dir = os.path.dirname(os.path.realpath(__file__))
-		path = os.path.join(current_dir, path)
-
-	return path
 
 
 def get_urls():
