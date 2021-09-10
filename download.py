@@ -3,7 +3,7 @@ import getopt
 import logging
 import os
 import sys
-from IUBConfiguration import IUBConfiguration
+from IUBBaseTools import IUBConfiguration
 
 from DownloaderManager import DownloaderManager
 from flask import Flask, request, render_template
@@ -19,14 +19,26 @@ app = Flask(__name__)
 dm: DownloaderManager
 
 
+def create_absolute_path(path):
+	"""
+	Check if the given path is an absolute path
+	:param path: The path to control
+	:return: The absolute path
+	"""
+	if not os.path.isabs(path):
+		currentDir = os.path.dirname(os.path.realpath(__file__))
+		path = os.path.join(currentDir, path)
+	return path
+
+
 def main():
 	global logName, setting_file, all_settings_dir, dm
 
 	logging.basicConfig(
-		filename=IUBConfiguration.create_absolute_path(logName),
+		filename=create_absolute_path(logName),
 		level=logging.ERROR,
 		format='%(asctime)s %(levelname)-8s %(message)s')
-	setting_path = IUBConfiguration.create_absolute_path(os.path.join(all_settings_dir, setting_file))
+	setting_path = create_absolute_path(os.path.join(all_settings_dir, setting_file))
 	config_class = IUBConfiguration(setting_path, logging)
 
 	print("Starting...")
