@@ -6,6 +6,9 @@ GlobalSettings:
   #True if we want to enable command line parameter parsing
   commandLineEnabled: True
 
+  #The network port used to expose this service
+  port: 5081
+
   #The output format of downloaded files by generic downloader - Required parameter
   'outtmpl': '/destination/path/%(title)s.%(ext)s'
 

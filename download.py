@@ -6,7 +6,7 @@ import sys
 from IUBBaseTools import IUBConfiguration
 
 from DownloaderManager import DownloaderManager
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, jsonify
 from markupsafe import escape
 
 # Details on parameters here:
@@ -33,7 +33,6 @@ def create_absolute_path(path):
 
 def main():
 	global logName, setting_file, all_settings_dir, dm
-
 	logging.basicConfig(
 		filename=create_absolute_path(logName),
 		level=logging.ERROR,
@@ -52,9 +51,12 @@ def main():
 	else:
 		logging.debug("Command line disabled, settings value: " + str(config_class.get_config('GlobalSettings', 'commandLineEnabled')))
 
+	logging.debug("Starting downloader routine")
 	dm.start()
+	port = config_class.get_config('GlobalSettings', 'port')
+	logging.debug("Starting service on port: " + str(port))
 	app.jinja_env.globals.update(get_urls=get_urls)
-	app.run(port=5081, host='0.0.0.0', debug=True, use_reloader=False)
+	app.run(port=port, host='0.0.0.0', debug=True, use_reloader=False)
 	dm.join()
 	print("Download Manager has stopped working - Killing process")
 	logging.error("Download Manager has stopped working - Killing process")
@@ -101,6 +103,17 @@ def test1():
 @app.route("/add", methods=['GET'])
 def add_url_interface():
 	return render_template('base.html')
+
+
+@app.route("/")
+def test_home():
+	return add_url_interface()
+
+
+@app.route("/json", methods=['GET'])
+def show_progress():
+	urls = get_urls()
+	return jsonify(**urls)
 
 
 if __name__ == "__main__":
