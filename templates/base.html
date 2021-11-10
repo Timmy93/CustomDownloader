@@ -9,7 +9,12 @@
     <h1>{{ key }}</h1>
       <ul>
     {% for file in value %}
-      <li><div class="queue">{{ file.name }} [{{ file.url }}]</div></li>
+      <li><div class="queue">
+          {% if 'status' in file %}
+          Progress: {{ file.status }}% -
+          {% endif %}
+          {{ file.name }} [{{ file.url }}]
+      </div></li>
     {% endfor %}
       </ul>
  {% endfor %}

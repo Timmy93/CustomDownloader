@@ -19,8 +19,9 @@ class Singleton(type):
 class DownloaderManager(threading.Thread, metaclass=Singleton):
 
 	supportedHost = [
-		'youtube',
-		'crunchyroll'
+		'youtube.com',
+		'youtu.be',
+		'crunchyroll.com'
 	]
 	"""
 	The list of supported host
@@ -28,6 +29,7 @@ class DownloaderManager(threading.Thread, metaclass=Singleton):
 
 	testedHost = [
 		'youtube.com',
+		'youtu.be'
 	]
 	"""
 	The list of host that work correctly using the generic downloader
@@ -107,17 +109,18 @@ class DownloaderManager(threading.Thread, metaclass=Singleton):
 		while True:
 			file = self._get_url()
 			downloader = self._get_downloader(file)
-			downloader.request_download(file["url"])
+			downloader.process_download(file)
 			downloader.start_download()
 			self.downloadCompleted.append(self.inProgress.pop())
 
 	def _get_downloader(self, file):
-		if 'crunchyroll.com' in file["url"]:
+		url = file["url"]
+		if 'crunchyroll.com' in url:
 			return CrunchyrollDownloader(self.configuration, self.logging, self)
 		else:
-			if not any([x in file["url"] for x in self.testedHost]):
-				self.logging.warning("Attempting download - Unknown provider: [" + file["url"] + "]")
-				print("Attempting download - Unknown provider: [" + file["url"] + "]")
+			if not any([x in url for x in self.testedHost]):
+				self.logging.warning("Attempting download - Unknown provider: [" + url + "]")
+				print("Attempting download - Unknown provider: [" + url + "]")
 			return GenericDownloader(self.configuration, self.logging, self)
 
 	def _analyze_url(self, url):
@@ -128,10 +131,12 @@ class DownloaderManager(threading.Thread, metaclass=Singleton):
 			return {'url': url, 'name': video_title}
 
 	def update_download_progress(self, filename, percentage):
+		#todo - download queue empty
 		for file in self.downloadQueue:
 			if file["name"] == filename:
 				file["status"] = percentage
 				self.logging.info("Updated percentage for this file " + file["name"])
 			else:
 				self.logging.info("Different name: [" + filename + "] - [" + file["name"] + "] - SKIP")
+		print("Updated")
 

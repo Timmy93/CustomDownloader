@@ -110,10 +110,24 @@ def test_home():
 	return add_url_interface()
 
 
-@app.route("/json", methods=['GET'])
+@app.route("/status", methods=['GET'])
 def show_progress():
 	urls = get_urls()
+	logging.info("Getting download status")
 	return jsonify(**urls)
+
+
+@app.route("/supported_sites", methods=['GET'])
+def show_supported_sites():
+	urls = DownloaderManager.supportedHost
+	return jsonify(urls)
+
+@app.route("/stop", methods=['GET'])
+def stop_download():
+	#todo
+	urls = DownloaderManager.supportedHost
+	return jsonify(urls)
+
 
 
 if __name__ == "__main__":

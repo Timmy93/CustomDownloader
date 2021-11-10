@@ -1,5 +1,7 @@
 import os
 import shutil
+from random import random
+
 import youtube_dl
 from datetime import timedelta
 
@@ -32,18 +34,24 @@ class GenericDownloader:
 	def __init__(self, settings, logging_handler, download_manager):
 		self.download_manager = download_manager
 		self.logging = logging_handler
-		self.urls = []
+		self.file_list = []
 		self.tempDir = None
 		self.finalDir = None
 		self.options = self.compose_option(settings.get_config(self.sectionName))
 
-	def request_download(self, url):
+	def process_download(self, file):
 		"""
 		Add the requested url to the list of files to download
-		:param url: The url to manage
+		:param file: The file containing all the information to manage
 		:return:
 		"""
-		self.urls.append(url)
+		self.file_list.append(file)
+
+	def stop_download(self, file):
+		for download_file in self.file_list:
+			if file == download_file:
+				download_file['stop'] = true
+
 
 	def start_download(self) -> None:
 		"""
@@ -51,7 +59,8 @@ class GenericDownloader:
 		:return:
 		"""
 		with youtube_dl.YoutubeDL(self.options) as ydl:
-			for url in self.urls:
+			for file in self.file_list:
+				url = file['url']
 				try:
 					print("Downloading: " + url)
 					result = ydl.extract_info("{}".format(url))
@@ -73,6 +82,9 @@ class GenericDownloader:
 				except youtube_dl.utils.DownloadError as e:
 					print("Cannot download " + url + ": " + str(e))
 					self.logging.warning("Cannot download " + url + ": " + str(e))
+				except StopDownload:
+					print("Download paused [" + url + "]")
+					self.logging.info("Download paused [" + url + "]")
 
 	def compose_option(self, settings):
 		"""
@@ -123,12 +135,20 @@ class GenericDownloader:
 
 		return output_settings
 
+	def check_download_to_stop(self):
+		for download_file in self.file_list:
+			if 'stop' in download_file and download_file['stop']:
+				self.logging.info("Stopping download [" + download_file['url'] + "]")
+				print("Stopping download  [" + download_file['url'] + "]")
+				raise StopDownload("Stopping download  [" + download_file['url'] + "]")
+
 	def my_hook(self, d):
 		time = str("{:0>8}".format(str(timedelta(seconds=d['elapsed'])))) if 'elapsed' in d else ""
 		size_in_bytes = d["total_bytes"] if 'total_bytes' in d else 0.00001
 		size = sizeof_fmt(size_in_bytes)
 		complete_filename = d['filename']
 		filename = os.path.basename(complete_filename)
+		self.check_download_to_stop()
 		if d['status'] == 'finished':
 			print(
 				"Download complete [" + filename + "] - " + size + " in " + time)
@@ -136,14 +156,20 @@ class GenericDownloader:
 			# 	"Download complete [" + os.path.basename(d['filename']) + "] - " + d["_total_bytes_str"] + " in "
 			# 	+ d["_elapsed_str"])
 		elif d['status'] == 'downloading':
-			percentage = round(float(d['downloaded_bytes']) / size_in_bytes * 100, 1)
+			downloaded_bytes = float(d['downloaded_bytes'])
+			percentage = round(downloaded_bytes/size_in_bytes * 100, 1)
 			print(
-				"Downloading " + str(percentage) + "% [" + filename +
-				"] - Elapsed: " + time + "s - ETA: " + d['eta'] + "s")
+				"Downloading " + str(percentage) + "% (" + str(downloaded_bytes) + "/" + str(size_in_bytes) + " bytes) [" + filename +
+				"] - Elapsed: " + time + "s - ETA: " + str(d['eta']) + "s")
 			self.download_manager.update_download_progress(filename, percentage)
 		else:
 			print("Unexpected error during download: " + str(d))
 			# self.logging("Unexpected error during download: " + str(d))
 
+
 class MissingRequiredParameter(Exception):
+	pass
+
+
+class StopDownload(Exception):
 	pass
