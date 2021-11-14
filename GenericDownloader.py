@@ -55,7 +55,7 @@ class GenericDownloader(threading.Thread):
 			video_title = info_dict.get('title', None)
 			domain = urlparse(url).netloc
 			self.logging.info("Added url: " + video_title)
-			return {'url': url, 'name': video_title, 'domain': domain}
+			return {'url': url, 'name': video_title, 'host': domain}
 
 	def process_download(self, file: dict):
 		"""
