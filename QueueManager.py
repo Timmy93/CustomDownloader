@@ -2,8 +2,7 @@ import logging
 from threading import Condition
 import copy
 from typing import Union
-from IUBBaseTools import IUBConfiguration
-from DownloaderManager import DownloaderManager
+from DownloaderManager import *
 
 
 class NoElementAvailable(Exception):

@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 import getopt
-import logging
 import os
 import sys
 
 # TODO Remove Locker or check if OS is Unix before requiring it
-from IUBBaseTools import IUBConfiguration
-
-from DownloaderManager import DownloaderManager
+from DownloaderManager import *
 from flask import Flask, request, render_template, jsonify
 from markupsafe import escape
 
