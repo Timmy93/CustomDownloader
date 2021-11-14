@@ -42,7 +42,7 @@ class GenericDownloader(threading.Thread):
 		self.options = self.compose_option(settings.get_config(self.sectionName))
 
 	def run(self) -> None:
-		self.start_download()
+		self._start_download()
 
 	def get_info(self, url: str) -> dict:
 		"""
@@ -68,7 +68,7 @@ class GenericDownloader(threading.Thread):
 	def stop_download(self):
 		self.managing_file['stop'] = True
 
-	def start_download(self) -> None:
+	def _start_download(self) -> None:
 		"""
 		Start the download of requested url
 		:return:
@@ -177,9 +177,9 @@ class GenericDownloader(threading.Thread):
 		elif d['status'] == 'downloading':
 			downloaded_bytes = float(d['downloaded_bytes'])
 			percentage = round(downloaded_bytes/size_in_bytes * 100, 1)
-			print(
-				"Downloading " + str(percentage) + "% (" + str(downloaded_bytes) + "/" + str(size_in_bytes) + " bytes) [" + filename +
-				"] - Elapsed: " + time + "s - ETA: " + str(d['eta']) + "s")
+			# print(
+			# 	"Downloading " + str(percentage) + "% (" + str(downloaded_bytes) + "/" + str(size_in_bytes) + " bytes) [" + filename +
+			# 	"] - Elapsed: " + time + "s - ETA: " + str(d['eta']) + "s")
 			self.download_manager.update_download_progress(filename, percentage)
 		else:
 			print("Unexpected error during download: " + str(d))

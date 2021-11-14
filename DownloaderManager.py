@@ -65,7 +65,9 @@ class DownloaderManager(threading.Thread):
 				# Retrieve the downloader to process that link
 				downloader = self.get_downloader(file['url'])
 				downloader.process_download(file)
-				downloader.start_download()
+				downloader.start()
+				self.logging.info("Started download of: " + str(file))
+				print("Started download of: " + file['name'] + "[" + file['url'] + "]")
 			else:
 				self.logging.info("Received invalid download file, ignoring it")
 
