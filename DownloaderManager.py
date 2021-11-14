@@ -63,9 +63,8 @@ class DownloaderManager(threading.Thread):
 			file = self.queueManager.get_next_file()
 			if file is not None:
 				# Retrieve the downloader to process that link
-				url = file['url']
-				downloader = self.get_downloader(url)
-				downloader.process_download(url)
+				downloader = self.get_downloader(file['url'])
+				downloader.process_download(file)
 				downloader.start_download()
 			else:
 				self.logging.info("Received invalid download file, ignoring it")
