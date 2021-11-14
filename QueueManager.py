@@ -43,12 +43,13 @@ class QueueManager:
 		with self.queueLock:
 			for idx, el in enumerate(copy.deepcopy(self.queues[source_queue])):
 				if el["url"] == url:
+					self.logging.info("Moving url ["+url+"] from "+source_queue+" to " + destination_queue)
 					self.queues[destination_queue].append(self.queues[source_queue].pop(idx))
 					# A download is completed, check if another file can be downloaded
 					if source_queue == "inProgress":
 						self.queueLock.notifyAll()
 					return True
-			self.logging.warning("Cannot find the requested url from the inProgress list")
+			self.logging.warning("Cannot find the requested url from the list " + source_queue)
 			return False
 
 	def add_file(self, file: dict, destination_queue: str = "downloadQueue") -> bool:

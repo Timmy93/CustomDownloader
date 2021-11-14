@@ -78,6 +78,7 @@ class DownloaderManager(threading.Thread):
 		return self.queueManager.change_queue(url, 'inProgress', 'paused')
 
 	def fail_this_download(self, url: str):
+		self.logging.info("Download failed: [" + url + "]")
 		return self.queueManager.change_queue(url, 'inProgress', 'downloadFailed')
 
 	def request_download(self, url: str):
