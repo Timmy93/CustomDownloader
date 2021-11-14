@@ -71,15 +71,15 @@ class DownloaderManager(threading.Thread):
 			else:
 				self.logging.info("Received invalid download file, ignoring it")
 
-	def complete_this_download(self, url: str):
-		return self.queueManager.change_queue(url, 'inProgress', 'downloadCompleted')
+	def complete_this_download(self, file: dict):
+		return self.queueManager.change_queue(file["url"], 'inProgress', 'downloadCompleted')
 
-	def pause_this_download(self, url: str):
-		return self.queueManager.change_queue(url, 'inProgress', 'paused')
+	def pause_this_download(self, file: dict):
+		return self.queueManager.change_queue(file["url"], 'inProgress', 'paused')
 
-	def fail_this_download(self, url: str):
-		self.logging.info("Download failed: [" + url + "]")
-		return self.queueManager.change_queue(url, 'inProgress', 'downloadFailed')
+	def fail_this_download(self, file: dict):
+		self.logging.info("Download failed: [" + file["url"] + "]")
+		return self.queueManager.change_queue(file["url"], 'inProgress', 'downloadFailed')
 
 	def request_download(self, url: str):
 		"""
