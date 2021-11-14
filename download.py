@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 import getopt
 import os
 import sys
