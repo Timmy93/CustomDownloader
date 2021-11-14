@@ -77,7 +77,7 @@ class GenericDownloader(threading.Thread):
 			url = self.managing_file['url']
 			try:
 				print("Downloading: " + url)
-				result = ydl.extract_info("{}".format(url))
+				result = ydl.extract_info("{}".format(url), download=False)
 				title = ydl.prepare_filename(result)
 				self.logging.info("Preparing download of: " + str(title))
 				print("Preparing download of: " + str(title))
