@@ -5,7 +5,7 @@ import os
 import sys
 
 # TODO Remove Locker or check if OS is Unix before requiring it
-from IUBConfiguration import IUBConfiguration
+from IUBBaseTools import IUBConfiguration
 
 from DownloaderManager import DownloaderManager
 from flask import Flask, request, render_template, jsonify
