@@ -13,7 +13,7 @@ class NoElementAvailable(Exception):
 
 class QueueManager:
 
-	def __init__(self, settings: IUBConfiguration, logging_handler: logging, dm: DownloaderManager):
+	def __init__(self, settings: 'IUBConfiguration', logging_handler: logging, dm: 'DownloaderManager'):
 		self.dm = dm
 		self.logging = logging_handler
 		self.configuration = settings
