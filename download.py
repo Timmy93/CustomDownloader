@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 import getopt
+import logging
 import os
 import sys
 
 # TODO Remove Locker or check if OS is Unix before requiring it
-from DownloaderManager import *
+from IUBBaseTools import IUBConfiguration
+
+from DownloaderManager import DownloaderManager
 from flask import Flask, request, render_template, jsonify
 from markupsafe import escape
 
@@ -122,12 +125,12 @@ def show_supported_sites():
 	urls = DownloaderManager.supportedHost
 	return jsonify(urls)
 
+
 @app.route("/stop", methods=['GET'])
 def stop_download():
 	#todo
 	urls = DownloaderManager.supportedHost
 	return jsonify(urls)
-
 
 
 if __name__ == "__main__":
