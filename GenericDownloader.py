@@ -1,6 +1,7 @@
 import os
 import shutil
-from random import random
+import threading
+from urllib.parse import urlparse
 
 import youtube_dl
 from datetime import timedelta
@@ -13,7 +14,7 @@ def sizeof_fmt(num, suffix='B'):
 	return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
-class GenericDownloader:
+class GenericDownloader(threading.Thread):
 
 	sectionName = 'GlobalSettings'
 
@@ -32,26 +33,40 @@ class GenericDownloader:
 	]
 
 	def __init__(self, settings, logging_handler, download_manager):
+		super().__init__()
 		self.download_manager = download_manager
 		self.logging = logging_handler
-		self.file_list = []
+		self.managing_file = None
 		self.tempDir = None
 		self.finalDir = None
 		self.options = self.compose_option(settings.get_config(self.sectionName))
 
-	def process_download(self, file):
+	def run(self) -> None:
+		self.start_download()
+
+	def get_info(self, url: str) -> dict:
 		"""
-		Add the requested url to the list of files to download
+		Extract further information on this url
+		:param url: The url to analyze
+		:return: The object containing further information
+		"""
+		with youtube_dl.YoutubeDL({}) as ydl:
+			info_dict = ydl.extract_info(url, download=False)
+			video_title = info_dict.get('title', None)
+			domain = urlparse(url).netloc
+			self.logging.info("Added url: " + video_title)
+			return {'url': url, 'name': video_title, 'domain': domain}
+
+	def process_download(self, file: dict):
+		"""
+		Set the file to download
 		:param file: The file containing all the information to manage
 		:return:
 		"""
-		self.file_list.append(file)
+		self.managing_file = file
 
-	def stop_download(self, file):
-		for download_file in self.file_list:
-			if file == download_file:
-				download_file['stop'] = true
-
+	def stop_download(self):
+		self.managing_file['stop'] = True
 
 	def start_download(self) -> None:
 		"""
@@ -59,34 +74,38 @@ class GenericDownloader:
 		:return:
 		"""
 		with youtube_dl.YoutubeDL(self.options) as ydl:
-			for file in self.file_list:
-				url = file['url']
-				try:
-					print("Downloading: " + url)
-					result = ydl.extract_info("{}".format(url))
-					title = ydl.prepare_filename(result)
-					self.logging.info("Preparing download of: " + str(title))
-					print("Preparing download of: " + str(title))
-					ydl.download([url])
-					if self.tempDir:
-						try:
-							shutil.move(os.path.join(self.tempDir, title), self.finalDir)
-							self.logging.debug("Moved " + title + " from ["+self.finalDir+"] to ["+self.tempDir+"]")
-							print("Moved " + title + " from ["+self.finalDir+"] to ["+self.tempDir+"]")
-						except FileNotFoundError:
-							self.logging.warning('Cannot find downloaded file: ' + title)
-							print('Cannot find file: ' + title)
+			url = self.managing_file['url']
+			try:
+				print("Downloading: " + url)
+				result = ydl.extract_info("{}".format(url))
+				title = ydl.prepare_filename(result)
+				self.logging.info("Preparing download of: " + str(title))
+				print("Preparing download of: " + str(title))
+				ydl.download([url])
+				if self.tempDir:
+					try:
+						shutil.move(os.path.join(self.tempDir, title), self.finalDir)
+						self.logging.debug("Moved " + title + " from ["+self.finalDir+"] to ["+self.tempDir+"]")
+						print("Moved " + title + " from ["+self.finalDir+"] to ["+self.tempDir+"]")
+					except FileNotFoundError:
+						self.logging.warning('Cannot find downloaded file: ' + title)
+						print('Cannot find file: ' + title)
+				self.logging.info("Successfully downloaded: " + str(title))
+				print("Successfully downloaded: " + str(title))
+				self.download_manager.complete_this_download(self.managing_file)
+			except youtube_dl.utils.DownloadError as e:
+				print("Cannot download " + url + ": " + str(e))
+				self.logging.warning("Cannot download " + url + ": " + str(e))
+				self.download_manager.fail_this_download(self.managing_file)
+			except StopDownload:
+				print("Download paused [" + url + "]")
+				self.logging.info("Download paused [" + url + "]")
+				self.download_manager.pause_this_download(self.managing_file)
+			except BaseException as e:
+				self.logging.error("Cannot download " + url + " - Unmanaged error [" + str(e) + "]")
+				self.download_manager.fail_this_download(self.managing_file)
 
-					self.logging.info("Successfully downloaded: " + str(title))
-					print("Successfully downloaded: " + str(title))
-				except youtube_dl.utils.DownloadError as e:
-					print("Cannot download " + url + ": " + str(e))
-					self.logging.warning("Cannot download " + url + ": " + str(e))
-				except StopDownload:
-					print("Download paused [" + url + "]")
-					self.logging.info("Download paused [" + url + "]")
-
-	def compose_option(self, settings):
+	def compose_option(self, settings: dict) -> dict:
 		"""
 		Creates the option to pass to youtube_dl
 		:param settings: An object containing a list of settings
@@ -136,13 +155,13 @@ class GenericDownloader:
 		return output_settings
 
 	def check_download_to_stop(self):
-		for download_file in self.file_list:
+		for download_file in self.managing_file:
 			if 'stop' in download_file and download_file['stop']:
 				self.logging.info("Stopping download [" + download_file['url'] + "]")
 				print("Stopping download  [" + download_file['url'] + "]")
 				raise StopDownload("Stopping download  [" + download_file['url'] + "]")
 
-	def my_hook(self, d):
+	def my_hook(self, d: dict):
 		time = str("{:0>8}".format(str(timedelta(seconds=d['elapsed'])))) if 'elapsed' in d else ""
 		size_in_bytes = d["total_bytes"] if 'total_bytes' in d else 0.00001
 		size = sizeof_fmt(size_in_bytes)

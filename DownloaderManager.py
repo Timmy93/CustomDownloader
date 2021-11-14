@@ -1,22 +1,14 @@
+import logging
 import threading
-from threading import Event
 
-from youtube_dl import YoutubeDL
+from IUBBaseTools import IUBConfiguration
 
 from CrunchyrollDownloader import CrunchyrollDownloader
 from GenericDownloader import GenericDownloader
+from QueueManager import QueueManager
 
 
-class Singleton(type):
-	_instances = {}
-
-	def __call__(cls, *args, **kwargs):
-		if cls not in cls._instances:
-			cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-		return cls._instances[cls]
-
-
-class DownloaderManager(threading.Thread, metaclass=Singleton):
+class DownloaderManager(threading.Thread):
 
 	supportedHost = [
 		'youtube.com',
@@ -49,72 +41,70 @@ class DownloaderManager(threading.Thread, metaclass=Singleton):
 	The list of specific downloader to use for each host. If no downloader is specified, the generic one will be used
 	"""
 
-	downloadQueue = []
-
-	def __init__(self, settings, logging_handler):
+	def __init__(self, settings: IUBConfiguration, logging_handler: logging):
 		super().__init__()
+		self.queueManager = QueueManager(settings, logging, self)
 		self.downloadFailed = []
 		self.inProgress = []
+		self.paused = []
 		self.downloadCompleted = []
 		self.logging = logging_handler
 		self.configuration = settings
-		self.urlAvailable = Event()
 		print("Downloader Manager successfully started")
 		self.logging.info("Downloader Manager successfully started")
 
 	def run(self):
-		self.start_processing()
+		"""
+		Start thread that manages url
+		:return:
+		"""
+		while True:
+			# Retrieve the next file to process
+			file = self.queueManager.get_next_file()
+			if file is not None:
+				# Retrieve the downloader to process that link
+				url = file['url']
+				downloader = self.get_downloader(url)
+				downloader.process_download(url)
+				downloader.start_download()
+			else:
+				self.logging.info("Received invalid download file, ignoring it")
 
-	def request_download(self, url):
+	def complete_this_download(self, url: str):
+		return self.queueManager.change_queue(url, 'inProgress', 'downloadCompleted')
+
+	def pause_this_download(self, url: str):
+		return self.queueManager.change_queue(url, 'inProgress', 'paused')
+
+	def fail_this_download(self, url: str):
+		return self.queueManager.change_queue(url, 'inProgress', 'downloadFailed')
+
+	def request_download(self, url: str):
+		"""
+		Add a new url to the list of link to manage
+		:param url: The url to manage
+		:return:
+		"""
 		if not isinstance(url, str):
 			self.logging.info("Not a valid link passed")
 			return
-		if url in self.downloadQueue:
+		if self.queueManager.already_managing(url):
 			self.logging.info("Already downloading: [" + url + "] - Skip")
 			return
 		self.logging.info("Adding new url to download list [" + url + "]")
-		self._append_url(url)
-
-	def _append_url(self, url):
-		"""
-		Analyze the given url and try to add it to the list
-		:param url: The url to download
-		:return: The complete object to manage
-		"""
-		el = self._analyze_url(url)
-		self.downloadQueue.append(el)
-		self.urlAvailable.set()
-
-	def _get_url(self):
-		while len(self.downloadQueue) == 0:
-			# Stop Download manager, start waiting for a new url
-			self.logging.info("Stopping download manager - No url to download")
-			print("Download Manager paused - Waiting for new url")
-			self.urlAvailable.clear()
-			self.urlAvailable.wait()
-			self.logging.info("Resuming download manager - New url found")
-		el = self.downloadQueue.pop(-1)
-		self.inProgress.append(el)
-		return el
+		downloader = self.get_downloader(url)
+		el = downloader.get_info(url)
+		self.queueManager.add_file(el)
 
 	def get_queue(self):
-		return {
-			'wait': self.downloadQueue,
-			'done': self.downloadCompleted,
-			'errors': self.downloadFailed,  # TODO Still not supported
-			'in_progress': self.inProgress
-		}
+		return self.queueManager.get_queues()
 
-	def start_processing(self):
-		while True:
-			file = self._get_url()
-			downloader = self._get_downloader(file)
-			downloader.process_download(file)
-			downloader.start_download()
-			self.downloadCompleted.append(self.inProgress.pop())
-
-	def _get_downloader(self, file):
-		url = file["url"]
+	def get_downloader(self, url: str):
+		"""
+		Retrieve the downloader to use to manage this file
+		:param url: The url to manage
+		:return: The downloader instance
+		"""
 		if 'crunchyroll.com' in url:
 			return CrunchyrollDownloader(self.configuration, self.logging, self)
 		else:
@@ -123,20 +113,5 @@ class DownloaderManager(threading.Thread, metaclass=Singleton):
 				print("Attempting download - Unknown provider: [" + url + "]")
 			return GenericDownloader(self.configuration, self.logging, self)
 
-	def _analyze_url(self, url):
-		with YoutubeDL({}) as ydl:
-			info_dict = ydl.extract_info(url, download=False)
-			video_title = info_dict.get('title', None)
-			self.logging.info("Added url: " + video_title)
-			return {'url': url, 'name': video_title}
-
-	def update_download_progress(self, filename, percentage):
-		#todo - download queue empty
-		for file in self.downloadQueue:
-			if file["name"] == filename:
-				file["status"] = percentage
-				self.logging.info("Updated percentage for this file " + file["name"])
-			else:
-				self.logging.info("Different name: [" + filename + "] - [" + file["name"] + "] - SKIP")
-		print("Updated")
-
+	def update_download_progress(self, filename: str, percentage: float):
+		self.queueManager.update_download_progress(filename, percentage)

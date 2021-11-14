@@ -1,19 +1,26 @@
 GlobalSettings:
   
-  #The accuracy level on logging
+  # The accuracy level on logging
   logLevel: 'INFO'
 
-  #True if we want to enable command line parameter parsing
+  # True if we want to enable command line parameter parsing
   commandLineEnabled: True
 
-  #The network port used to expose this service
+  # The network port used to expose this service
   port: 5081
 
-  #The output format of downloaded files by generic downloader - Required parameter
+  # The output format of downloaded files by generic downloader - Required parameter
   'outtmpl': '/destination/path/%(title)s.%(ext)s'
 
-  #Temporary directory - Insert only the path, not the instruction on the final name
+  # Temporary directory - Insert only the path, not the instruction on the final name
   'tempDir': '/tmp'
+
+  # Maximum number of simultaneous downloads
+  maxTotalDownload: 3
+
+  # Maximum number of simultaneous download per host
+  maxDownloadPerHost: 2
+
 
 CrunchyrollSettings:
 
@@ -44,3 +51,6 @@ CrunchyrollSettings:
 
   #Seconds to sleep between downloads
   'sleep_interval': 15
+
+  # Maximum number of simultaneous download per this host
+  maxDownloadPerHost: 1
