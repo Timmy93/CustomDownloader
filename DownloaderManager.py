@@ -1,10 +1,10 @@
 import logging
 import threading
 
+from QueueManager import QueueManager
 from IUBBaseTools import IUBConfiguration
 from CrunchyrollDownloader import CrunchyrollDownloader
 from GenericDownloader import GenericDownloader
-from QueueManager import QueueManager
 
 
 class DownloaderManager(threading.Thread):

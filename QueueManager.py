@@ -2,7 +2,6 @@ import logging
 from threading import Condition
 import copy
 from typing import Union
-from DownloaderManager import *
 
 
 class NoElementAvailable(Exception):
@@ -11,7 +10,7 @@ class NoElementAvailable(Exception):
 
 class QueueManager:
 
-	def __init__(self, settings: IUBConfiguration, logging_handler: logging, dm: DownloaderManager):
+	def __init__(self, settings, logging_handler: logging, dm):
 		self.dm = dm
 		self.logging = logging_handler
 		self.configuration = settings
