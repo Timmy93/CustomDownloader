@@ -2,9 +2,10 @@ import os
 import shutil
 import threading
 from urllib.parse import urlparse
-
-import youtube_dl
+import ffmpeg
+import yt_dlp
 from datetime import timedelta
+
 
 def sizeof_fmt(num, suffix='B'):
 	for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
@@ -15,8 +16,11 @@ def sizeof_fmt(num, suffix='B'):
 
 
 class GenericDownloader(threading.Thread):
-
 	sectionName = 'GlobalSettings'
+
+	lang = {
+		'itIT': 'Italian'
+	}
 
 	requiredParameters = [
 		'outtmpl',
@@ -42,7 +46,21 @@ class GenericDownloader(threading.Thread):
 		self.options = self.compose_option(settings.get_config(self.sectionName))
 
 	def run(self) -> None:
-		self._start_download()
+		url = self.managing_file['url']
+		try:
+			title = self._start_download()
+			self.completeDownload(title)
+		except StopDownload:
+			print("Download paused [" + url + "]")
+			self.logging.info("Download paused [" + url + "]")
+			self.download_manager.pause_this_download(self.managing_file)
+		except yt_dlp.utils.DownloadError as e:
+			print("Cannot download " + url + ": " + str(e))
+			self.logging.warning("Cannot download " + url + ": " + str(e))
+			self.download_manager.fail_this_download(self.managing_file)
+		except BaseException as e:
+			self.logging.error("Cannot download " + url + " - Unmanaged error [" + str(e) + "]")
+			self.download_manager.fail_this_download(self.managing_file)
 
 	def get_info(self, url: str) -> dict:
 		"""
@@ -50,7 +68,7 @@ class GenericDownloader(threading.Thread):
 		:param url: The url to analyze
 		:return: The object containing further information
 		"""
-		with youtube_dl.YoutubeDL({}) as ydl:
+		with yt_dlp.YoutubeDL({}) as ydl:
 			info_dict = ydl.extract_info(url, download=False)
 			video_title = info_dict.get('title', None)
 			domain = urlparse(url).netloc
@@ -71,39 +89,30 @@ class GenericDownloader(threading.Thread):
 	def _start_download(self) -> None:
 		"""
 		Start the download of requested url
-		:return:
+		:return: The filename of the downloaded files
 		"""
-		with youtube_dl.YoutubeDL(self.options) as ydl:
+		with yt_dlp.YoutubeDL(self.options) as ydl:
 			url = self.managing_file['url']
+			print("Downloading: " + url)
+			result = ydl.extract_info("{}".format(url), download=False)
+			title = ydl.prepare_filename(result)
+			self.logging.info("Preparing download of: " + str(title))
+			print("Preparing download of: " + str(title))
+			ydl.download([url])
+			return title
+
+	def completeDownload(self, title):
+		if self.tempDir:
 			try:
-				print("Downloading: " + url)
-				result = ydl.extract_info("{}".format(url), download=False)
-				title = ydl.prepare_filename(result)
-				self.logging.info("Preparing download of: " + str(title))
-				print("Preparing download of: " + str(title))
-				ydl.download([url])
-				if self.tempDir:
-					try:
-						shutil.move(os.path.join(self.tempDir, title), self.finalDir)
-						self.logging.debug("Moved " + title + " from ["+self.finalDir+"] to ["+self.tempDir+"]")
-						print("Moved " + title + " from ["+self.finalDir+"] to ["+self.tempDir+"]")
-					except FileNotFoundError:
-						self.logging.warning('Cannot find downloaded file: ' + title)
-						print('Cannot find file: ' + title)
-				self.logging.info("Successfully downloaded: " + str(title))
-				print("Successfully downloaded: " + str(title))
-				self.download_manager.complete_this_download(self.managing_file)
-			except youtube_dl.utils.DownloadError as e:
-				print("Cannot download " + url + ": " + str(e))
-				self.logging.warning("Cannot download " + url + ": " + str(e))
-				self.download_manager.fail_this_download(self.managing_file)
-			except StopDownload:
-				print("Download paused [" + url + "]")
-				self.logging.info("Download paused [" + url + "]")
-				self.download_manager.pause_this_download(self.managing_file)
-			except BaseException as e:
-				self.logging.error("Cannot download " + url + " - Unmanaged error [" + str(e) + "]")
-				self.download_manager.fail_this_download(self.managing_file)
+				shutil.move(os.path.join(self.tempDir, title), self.finalDir)
+				self.logging.debug("Moved " + title + " from [" + self.finalDir + "] to [" + self.tempDir + "]")
+				print("Moved " + title + " from [" + self.finalDir + "] to [" + self.tempDir + "]")
+			except FileNotFoundError:
+				self.logging.warning('Cannot find downloaded file: ' + title)
+				print('Cannot find file: ' + title)
+		self.logging.info("Successfully downloaded: " + str(title))
+		print("Successfully downloaded: " + str(title))
+		self.download_manager.complete_this_download(self.managing_file)
 
 	def compose_option(self, settings: dict) -> dict:
 		"""
@@ -136,7 +145,8 @@ class GenericDownloader(threading.Thread):
 			self.tempDir = settings['tempDir']
 			output_settings['outtmpl'] = os.path.join(self.tempDir, os.path.basename(settings['outtmpl']))
 			self.logging.info(
-				"Using temp dir: [" + output_settings['outtmpl'] + "] and finally move to final dir: [" + settings['outtmpl'] + "]")
+				"Using temp dir: [" + output_settings['outtmpl'] + "] and finally move to final dir: [" + settings[
+					'outtmpl'] + "]")
 		else:
 			self.logging.warning(
 				"Not using temp directory, downloading directly to [" + output_settings['outtmpl'] + "]")
@@ -171,19 +181,43 @@ class GenericDownloader(threading.Thread):
 		if d['status'] == 'finished':
 			print(
 				"Download complete [" + filename + "] - " + size + " in " + time)
-			# self.logging(
-			# 	"Download complete [" + os.path.basename(d['filename']) + "] - " + d["_total_bytes_str"] + " in "
-			# 	+ d["_elapsed_str"])
+		# self.logging(
+		# 	"Download complete [" + os.path.basename(d['filename']) + "] - " + d["_total_bytes_str"] + " in "
+		# 	+ d["_elapsed_str"])
 		elif d['status'] == 'downloading':
 			downloaded_bytes = float(d['downloaded_bytes'])
-			percentage = round(downloaded_bytes/size_in_bytes * 100, 1)
+			percentage = round(downloaded_bytes / size_in_bytes * 100, 1)
 			# print(
 			# 	"Downloading " + str(percentage) + "% (" + str(downloaded_bytes) + "/" + str(size_in_bytes) + " bytes) [" + filename +
 			# 	"] - Elapsed: " + time + "s - ETA: " + str(d['eta']) + "s")
 			self.download_manager.update_download_progress(filename, percentage)
 		else:
 			print("Unexpected error during download: " + str(d))
-			# self.logging("Unexpected error during download: " + str(d))
+
+	# self.logging("Unexpected error during download: " + str(d))
+
+	def joinVideo(self, video, subtitle, subtitleLang, output_file):
+		subtitleLang = subtitleLang[:2]
+		input_ffmpeg = ffmpeg.input(video)
+		input_ffmpeg_sub = ffmpeg.input(subtitle)
+
+		input_video = input_ffmpeg['v']
+		input_audio = input_ffmpeg['a']
+		input_subtitles = input_ffmpeg_sub['s']
+
+		output_ffmpeg = ffmpeg.output(
+			input_video, input_audio, input_subtitles, output_file,
+			vcodec='copy', acodec='copy',
+			**{
+				'metadata:s:s:0': "language=" + subtitleLang,
+				'disposition:s:0': "forced"
+			}
+		)
+		# If the destination file already exists, overwrite it.
+		output_ffmpeg = ffmpeg.overwrite_output(output_ffmpeg)
+		self.logging.info("Start processing file")
+		# Do it! transcode!
+		ffmpeg.run(output_ffmpeg)
 
 
 class MissingRequiredParameter(Exception):

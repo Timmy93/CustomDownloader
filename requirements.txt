@@ -1,5 +1,6 @@
-youtube-dl
-pyyaml~=5.4.1
-flask~=2.0.1
+yt-dlp
+ffmpeg-python
+pyyaml~=6.0
+flask~=2.0.2
 MarkupSafe~=2.0.1
-IUBBaseTools
+IUBBaseTools~=0.0.7
