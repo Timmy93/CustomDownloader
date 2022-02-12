@@ -108,8 +108,8 @@ class GenericDownloader(threading.Thread):
 				self.logging.debug("Moved " + title + " from [" + self.finalDir + "] to [" + self.tempDir + "]")
 				print("Moved " + title + " from [" + self.finalDir + "] to [" + self.tempDir + "]")
 			except FileNotFoundError:
-				self.logging.warning('Cannot find downloaded file: ' + title)
-				print('Cannot find file: ' + title)
+				self.logging.warning('Cannot find downloaded file: ' + os.path.join(self.tempDir, title))
+				print('Cannot find file: ' + os.path.join(self.tempDir, title))
 		self.logging.info("Successfully downloaded: " + str(title))
 		print("Successfully downloaded: " + str(title))
 		self.download_manager.complete_this_download(self.managing_file)
