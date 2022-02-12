@@ -34,11 +34,9 @@ class CrunchyrollDownloader(GenericDownloader):
 			ydl.download(url)
 
 		with yt_dlp.YoutubeDL(self.options) as ydl:
-			info_dict = ydl.extract_info(url, download=True)
-			title = ydl.prepare_filename(info_dict)
-			ext = info_dict.get('ext', None)
-			videoName = title + "." + ext
-			outputName = os.path.splitext(title)[0] + ".mkv"
+			info_dict = ydl.extract_info(url, download=False)
+			videoName = ydl.prepare_filename(info_dict)
+			outputName = os.path.splitext(videoName)[0] + ".mkv"
 			print("Downloading video file: " + videoName)
 
 		self.joinVideo(videoName, subtitleName, lang, outputName)
