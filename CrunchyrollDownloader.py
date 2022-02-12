@@ -41,5 +41,10 @@ class CrunchyrollDownloader(GenericDownloader):
 
 		self.joinVideo(videoName, subtitleName, lang, outputName)
 		self.logging.info("Downloaded file: " + outputName)
-		#TODO delete old files
+		if os.path.isfile(outputName):
+			os.remove(subtitleName)
+			os.remove(videoName)
+			self.logging.info("Deleted temporary files")
+		else:
+			self.logging.warning("Cannot delete temporary files ["+subtitleName+"]["+videoName+"] - SKIP")
 		return os.path.basename(outputName)
