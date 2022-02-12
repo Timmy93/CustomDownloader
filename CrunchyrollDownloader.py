@@ -27,9 +27,9 @@ class CrunchyrollDownloader(GenericDownloader):
 
 		with yt_dlp.YoutubeDL(options) as ydl:
 			info_dict = ydl.extract_info(url, download=False)
-			title = ydl.prepare_filename(info_dict)
+			videoName = ydl.prepare_filename(info_dict)
 			sub_ext = info_dict.get('requested_subtitles', {}).get(lang, {}).get('ext', None)
-			subtitleName = title + "." + lang + "." + sub_ext
+			subtitleName = os.path.splitext(videoName)[0] + "." + lang + "." + sub_ext
 			self.logging.info("Downloading subtitle file: " + subtitleName)
 			ydl.download(url)
 
