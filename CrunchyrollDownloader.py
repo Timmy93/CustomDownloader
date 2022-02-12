@@ -34,6 +34,7 @@ class CrunchyrollDownloader(GenericDownloader):
 			ydl.download(url)
 
 		with yt_dlp.YoutubeDL(self.options) as ydl:
+			# TODO Set to True
 			info_dict = ydl.extract_info(url, download=False)
 			videoName = ydl.prepare_filename(info_dict)
 			outputName = os.path.splitext(videoName)[0] + ".mkv"
@@ -41,4 +42,5 @@ class CrunchyrollDownloader(GenericDownloader):
 
 		self.joinVideo(videoName, subtitleName, lang, outputName)
 		self.logging.info("Downloaded file: " + outputName)
-		return outputName
+		#TODO delete old files
+		return os.path.basename(outputName)
