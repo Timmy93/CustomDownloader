@@ -1,3 +1,5 @@
+import os
+
 import yt_dlp
 
 from GenericDownloader import GenericDownloader
@@ -12,27 +14,31 @@ class CrunchyrollDownloader(GenericDownloader):
 		print(settings)
 
 	def _start_download(self) -> None:
-		lang = "itIT"
 		url = self.managing_file['url']
-
 		options = {
 			'writesubtitles': True,
-			'subtitleslangs': [lang],
 			'skip_download': True,
 		}
+		if 'outtmpl' in self.options:
+			options['outtmpl'] = self.options['outtmpl']
+		if 'subtitleslangs' in self.options:
+			options['subtitleslangs'] = self.options['subtitleslangs']
+		lang = options['subtitleslangs'][0]
+
 		with yt_dlp.YoutubeDL(options) as ydl:
 			info_dict = ydl.extract_info(url, download=False)
+			title = ydl.prepare_filename(info_dict)
 			sub_ext = info_dict.get('requested_subtitles', {}).get(lang, {}).get('ext', None)
-			subtitleName = info_dict.get('title', None) + "." + lang + "." + sub_ext
+			subtitleName = title + "." + lang + "." + sub_ext
 			self.logging.info("Downloading subtitle file: " + subtitleName)
 			ydl.download(url)
 
-		with yt_dlp.YoutubeDL({}) as ydl:
+		with yt_dlp.YoutubeDL(self.options) as ydl:
 			info_dict = ydl.extract_info(url, download=True)
-			title = info_dict.get('title', None)
+			title = ydl.prepare_filename(info_dict)
 			ext = info_dict.get('ext', None)
 			videoName = title + "." + ext
-			outputName = title + ".mkv"
+			outputName = os.path.splitext(title)[0] + ".mkv"
 			print("Downloading video file: " + videoName)
 
 		self.joinVideo(videoName, subtitleName, lang, outputName)
