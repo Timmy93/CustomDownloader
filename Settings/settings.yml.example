@@ -54,3 +54,14 @@ CrunchyrollSettings:
 
   # Maximum number of simultaneous download per this host
   maxDownloadPerHost: 1
+
+AniplaySettings:
+
+  #The output format of downloaded files by Crunchyroll - Required parameter
+  'outtmpl': '/destination/path/%(title)s.%(ext)s'
+
+  #Seconds to sleep between downloads
+  'sleep_interval': 15
+
+  # Maximum number of simultaneous download per this host
+  maxDownloadPerHost: 1

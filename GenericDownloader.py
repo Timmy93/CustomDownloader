@@ -86,7 +86,7 @@ class GenericDownloader(threading.Thread):
 	def stop_download(self):
 		self.managing_file['stop'] = True
 
-	def _start_download(self) -> None:
+	def _start_download(self) -> str:
 		"""
 		Start the download of requested url
 		:return: The filename of the downloaded files

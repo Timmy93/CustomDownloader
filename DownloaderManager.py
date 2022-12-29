@@ -2,6 +2,7 @@ from __future__ import annotations
 import logging
 import threading
 
+from AniplayDownloader import AniplayDownloader
 from QueueManager import QueueManager
 from IUBBaseTools import IUBConfiguration
 from CrunchyrollDownloader import CrunchyrollDownloader
@@ -9,7 +10,6 @@ from GenericDownloader import GenericDownloader
 
 
 class DownloaderManager(threading.Thread):
-
 	supportedHost = [
 		'youtube.com',
 		'youtu.be',
@@ -96,7 +96,11 @@ class DownloaderManager(threading.Thread):
 		self.logging.info("Adding new url to download list [" + url + "]")
 		downloader = self.get_downloader(url)
 		el = downloader.get_info(url)
-		self.queueManager.add_file(el)
+		if 'dir_value' in el:
+			for singleFile in el['dir_value']:
+				self.queueManager.add_file(singleFile)
+		else:
+			self.queueManager.add_file(el)
 
 	def get_queue(self):
 		return self.queueManager.get_queues()
@@ -109,6 +113,8 @@ class DownloaderManager(threading.Thread):
 		"""
 		if 'crunchyroll.com' in url:
 			return CrunchyrollDownloader(self.configuration, self.logging, self)
+		elif 'aniplay.it' in url:
+			return AniplayDownloader(self.configuration, self.logging, self)
 		else:
 			if not any([x in url for x in self.testedHost]):
 				self.logging.warning("Attempting download - Unknown provider: [" + url + "]")

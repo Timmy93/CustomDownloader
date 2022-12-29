@@ -1,7 +1,9 @@
 yt-dlp
 ffmpeg-python
-pyyaml~=6.0
-flask~=2.0.2
-MarkupSafe~=2.0.1
+pyyaml>=6.0
+flask>=2.0.2
+MarkupSafe>=2.0.1
 IUBBaseTools~=0.0.7
 psutil
+requests>=2.26.0
+ffmpeg>=1.4
