@@ -10,10 +10,12 @@ from GenericDownloader import GenericDownloader
 
 
 class DownloaderManager(threading.Thread):
+
 	supportedHost = [
 		'youtube.com',
 		'youtu.be',
-		'crunchyroll.com'
+		'crunchyroll.com',
+		'aniplay.it'
 	]
 	"""
 	The list of supported host
@@ -21,21 +23,24 @@ class DownloaderManager(threading.Thread):
 
 	testedHost = [
 		'youtube.com',
-		'youtu.be'
+		'youtu.be',
+		'aniplay.it'
 	]
 	"""
 	The list of host that work correctly using the generic downloader
 	"""
 
 	sectionName = {
-		'crunchyroll': 'CrunchyrollSettings'
+		'crunchyroll': 'CrunchyrollSettings',
+		'aniplay': 'AniplaySettings'
 	}
 	"""
 	The dedicated section for each host. If no section is specified, the generic one will be used
 	"""
 
 	downloaderName = {
-		'crunchyroll': 'CrunchyrollDownloader'
+		'crunchyroll': 'CrunchyrollDownloader',
+		'aniplay': 'AniplayDownloader'
 	}
 	"""
 	The list of specific downloader to use for each host. If no downloader is specified, the generic one will be used
@@ -97,8 +102,7 @@ class DownloaderManager(threading.Thread):
 		downloader = self.get_downloader(url)
 		el = downloader.get_info(url)
 		if 'dir_value' in el:
-			for singleFile in el['dir_value']:
-				self.queueManager.add_file(singleFile)
+			self.queueManager.addBatchFiles(el['dir_value'])
 		else:
 			self.queueManager.add_file(el)
 

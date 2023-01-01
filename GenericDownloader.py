@@ -33,7 +33,8 @@ class GenericDownloader(threading.Thread):
 		'writesubtitles',
 		'restrictfilenames',
 		'ignoreerrors',
-		'sleep_interval'
+		'sleep_interval',
+		'tempDir'
 	]
 
 	def __init__(self, settings, logging_handler, download_manager):

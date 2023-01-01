@@ -70,6 +70,19 @@ class QueueManager:
 			self.queueLock.notifyAll()
 			return True
 
+	def addBatchFiles(self, batchList: list, destination_queue: str = "downloadQueue") -> bool:
+		# Initial check
+		if destination_queue not in self.queues:
+			self.logging.error("Invalid destination queue: " + destination_queue)
+			return False
+		# File movement
+		with self.queueLock:
+			for file in batchList:
+				self.queues[destination_queue].append(file)
+			# Added a new link, check if it can be downloaded
+			self.queueLock.notifyAll()
+			return True
+
 	def get_next_file(self) -> dict:
 		"""
 		An infinite loop that continuously tries to retrieve an available url to download
@@ -150,14 +163,18 @@ class QueueManager:
 	def _get_index_first_element_available(self) -> int:
 		"""
 		Check if there is at least one host that can be processed in the download queue
-		:return: The index containing the first available element. False if no element is found
+		:return: The index containing the first available element. Raise NoElementAvailable if no element is found
 		"""
 		queue_overview = self._get_queue_overview()
 		for idx, el in enumerate(copy.deepcopy(self.queues['downloadQueue'])):
+			if 'host' not in el:
+				self.logging.warning("Missing information on host in this object [" + str(el) + "] - Skipping host limitation")
+				return idx
 			# This host is not in the download list, proceed
 			if el['host'] not in queue_overview:
+				self.logging.info("File not in logging overview")
 				return idx
-			# This host has not reach the global limit per host
+			# This host has not reached the global limit per host
 			sectionName = self.dm.get_downloader(el['host']).sectionName
 			if queue_overview.get(el['host']) < self.configuration.get_config(sectionName, 'maxDownloadPerHost'):
 				return idx
