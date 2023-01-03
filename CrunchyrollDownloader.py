@@ -1,6 +1,7 @@
 import os
 
 import yt_dlp
+import urllib.request
 
 from GenericDownloader import GenericDownloader
 
@@ -24,16 +25,20 @@ class CrunchyrollDownloader(GenericDownloader):
 		lang = options['subtitleslangs'][0]
 
 		with yt_dlp.YoutubeDL(options) as ydl:
+			#Preparing subtitle file
 			info_dict = ydl.extract_info(url, download=False)
 			videoName = ydl.prepare_filename(info_dict)
-			sub_ext = info_dict.get('requested_subtitles', {}).get(lang, {}).get('ext', None)
-			if sub_ext:
+			lang_parsed = lang[:2] + "-" + lang[2:]
+			sub_ext_info = info_dict.get('subtitles', {}).get(lang_parsed, [{}])[0]
+			sub_ext = sub_ext_info.get('ext', None)
+			directDownloadLink = sub_ext_info.get('url', None)
+			if sub_ext and directDownloadLink:
 				subtitleName = os.path.splitext(videoName)[0] + "." + lang + "." + sub_ext
 				self.logging.info("Downloading subtitle file: " + subtitleName)
+				urllib.request.urlretrieve(directDownloadLink, subtitleName)
 			else:
 				subtitleName = None
 				self.logging.warning("Cannot extract subtitle language - Skipping selection")
-			ydl.download(url)
 
 		with yt_dlp.YoutubeDL(self.options) as ydl:
 			print("Downloading video file: " + videoName)
