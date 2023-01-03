@@ -1,6 +1,10 @@
 from __future__ import annotations
 import logging
+import os
 import threading
+from urllib.parse import urlparse
+
+import yaml
 
 from AniplayDownloader import AniplayDownloader
 from QueueManager import QueueManager
@@ -30,25 +34,14 @@ class DownloaderManager(threading.Thread):
 	The list of host that work correctly using the generic downloader
 	"""
 
-	sectionName = {
-		'crunchyroll': 'CrunchyrollSettings',
-		'aniplay': 'AniplaySettings'
-	}
-	"""
-	The dedicated section for each host. If no section is specified, the generic one will be used
-	"""
-
-	downloaderName = {
-		'crunchyroll': 'CrunchyrollDownloader',
-		'aniplay': 'AniplayDownloader'
-	}
-	"""
-	The list of specific downloader to use for each host. If no downloader is specified, the generic one will be used
-	"""
+	all_settings_dir = "Settings"
+	setting_file = "settings.yml"
+	association_file = "association.yml"
 
 	def __init__(self, settings: IUBConfiguration, logging_handler: logging):
 		super().__init__()
 		self.queueManager = QueueManager(settings, logging, self)
+		self.downloaderAssociation = self.loadAssociationList()
 		self.downloadFailed = []
 		self.inProgress = []
 		self.paused = []
@@ -111,19 +104,65 @@ class DownloaderManager(threading.Thread):
 
 	def get_downloader(self, url: str):
 		"""
-		Retrieve the downloader to use to manage this file
+		Dynamically retrieve the downloader to use to manage this file
 		:param url: The url to manage
 		:return: The downloader instance
 		"""
-		if 'crunchyroll.com' in url:
-			return CrunchyrollDownloader(self.configuration, self.logging, self)
-		elif 'aniplay.it' in url:
-			return AniplayDownloader(self.configuration, self.logging, self)
-		else:
-			if not any([x in url for x in self.testedHost]):
-				self.logging.warning("Attempting download - Unknown provider: [" + url + "]")
-				print("Attempting download - Unknown provider: [" + url + "]")
-			return GenericDownloader(self.configuration, self.logging, self)
+		host = urlparse(url).netloc
+		info = self.extractSettingsAssociation(host)
+		className = info["downloaderName"]
+		constructor = globals()[className]
+		instance = constructor(self.configuration, self.logging, self)
+		self.logging.info("Dynamically created an instance of: " + className)
+		return instance
 
 	def update_download_progress(self, filename: str, percentage: float):
 		self.queueManager.update_download_progress(filename, percentage)
+
+	def loadAssociationList(self) -> dict:
+		"""
+		Retrieve the association list containing all the relevant information on Settings, Downloader and associated domains
+		:return:
+		"""
+		#Create correct path to the association list
+		path = os.path.join(DownloaderManager.all_settings_dir, DownloaderManager.association_file)
+		if not os.path.isabs(path):
+			currentDir = os.path.dirname(os.path.realpath(__file__))
+			path = os.path.join(currentDir, path)
+
+		#Load content of the association list
+		with open(path, 'r') as stream:
+			try:
+				config = yaml.safe_load(stream)
+				return config['Association']
+			except yaml.YAMLError as exc:
+				print("Cannot load file: [" + path + "] - Error: " + str(exc))
+				self.logging.error("Cannot load file: [" + path + "] - Error: " + str(exc))
+				exit(1)
+
+	def extractSettingsAssociation(self, domain: str) -> dict:
+		genericInfo = None
+		for downloader in self.downloaderAssociation['downloader']:
+			#Check association
+			key = list(downloader.keys())[0]
+			if domain in downloader[key]['associatedDomains']:
+				return downloader[key]
+			# Extract generic info
+			if key == 'generic':
+				genericInfo = downloader[key]
+
+		self.logging.warning("Untested domain - Getting generic section")
+		if genericInfo:
+			return genericInfo
+		else:
+			self.logging.error("Missing section generic in association file - EXIT")
+			exit(1)
+
+	def extractSettingsAssociationFromDownloaderName(self, className: str) -> dict:
+		for downloader in self.downloaderAssociation['downloader']:
+			# Check association
+			key = list(downloader.keys())[0]
+			if className in downloader[key]['downloaderName']:
+				return downloader[key]
+		self.logging.error("Missing information for this downloader [" + className + "] - EXIT")
+		exit(1)

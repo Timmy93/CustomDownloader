@@ -11,15 +11,6 @@ from GenericDownloader import GenericDownloader
 
 class AniplayDownloader(GenericDownloader):
 
-	sectionName = 'AniplaySettings'
-
-	alreadyDownloadedList = []
-
-	alreadyDownloadedListFile = "downloaded_episodes.txt"
-
-	#The download status
-	percentage = 0
-
 	headers = {
 		"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0",
 		"Accept": "application/json, text/plain, */*",
@@ -35,8 +26,9 @@ class AniplayDownloader(GenericDownloader):
 
 	def __init__(self, configuration, logging, dm):
 		super().__init__(configuration, logging, dm)
-
-	# self.logging = logging
+		self.logging.info("Aniplay Downloader - Created")
+		# The download status
+		self.percentage = 0
 
 	def get_info(self, url: str) -> dict:
 		"""
@@ -46,6 +38,7 @@ class AniplayDownloader(GenericDownloader):
 		"""
 		res = {'dir_value': []}
 		if self.isARelease(url):
+			self.logging.info("Managing this release: [" + url + "]")
 			releaseLink = self.parseRelease(url)
 			self._retrieveReleaseInfo(releaseLink)
 			for episodeInfo in self.release["episodes"]:
@@ -58,18 +51,21 @@ class AniplayDownloader(GenericDownloader):
 		elif self.isAnEpisode(url):
 			epLink = self.parseEpisode(url)
 			episodeInfo = self._getEpisodeInfo(epLink)
-			epName = self._createEpisodeName(episodeInfo)
-			domain = urlparse(epLink).netloc
-			res['dir_value'].append({'url': epLink, 'name': epName, 'host': domain})
-			self.logging.info("Adding episode: " + epName + " [" + epLink + "]")
+			if episodeInfo:
+				epName = self._createEpisodeName(episodeInfo)
+				domain = urlparse(epLink).netloc
+				res['dir_value'].append({'url': epLink, 'name': epName, 'host': domain})
+				self.logging.info("Adding episode: " + epName + " [" + epLink + "]")
+			else:
+				self.logging.warning("Cannot extract info on this episode: [" + epLink + "]")
 		else:
 			self.logging.info("The passed url is not a supported Aniplay link: [" + url + "]")
 			print("Nothing to download")
 		return res
 
 	def _start_download(self) -> str:
+		self.logging.info("Starting download of this file: ", self.managing_file)
 		url = self.managing_file['url']
-		print("Downloading: " + url)
 		return self._downloadFile(url)
 
 	def _retrieveReleaseInfo(self, url: str) -> bool:
@@ -87,14 +83,17 @@ class AniplayDownloader(GenericDownloader):
 				return True
 			except requests.exceptions.JSONDecodeError as e:
 				print("WARNING - Cannot decode this release [" + str(e) + "]")
-				print(response.content)
+				self.logging.warning("Cannot decode this release [" + str(e) + "]")
+				self.logging.warning(response.content)
 				try:
 					self.release = ast.literal_eval(str(response.content))
 					return True
 				except:
+					self.logging.warning("Cannot execute literal evaluation as dict")
 					print("WARNING - Cannot evalue as dict")
 					return False
 		else:
+			self.logging.error("Page not available [" + str(response.status_code) + "]")
 			print("ERROR - Page not available [" + str(response.status_code) + "]")
 			return False
 
@@ -118,6 +117,9 @@ class AniplayDownloader(GenericDownloader):
 		start = time.time()
 		#Get episode info
 		episodeInfo = self._getEpisodeInfo(url)
+		if not episodeInfo:
+			self.logging.warning("Cannot extract information on this episode [", url, "] - Cannot proceed with download")
+			raise ImpossibleDownload("Cannot extract information on this episode")
 		#Get direct download link
 		episodeUrl = self.getDirectDownloadUrl(str(episodeInfo["id"]))
 		#Generate file name
@@ -137,6 +139,7 @@ class AniplayDownloader(GenericDownloader):
 
 	def completeDownload(self, title):
 		print("Overriding complete download procedure")
+		#TODO - Complete function
 		self.moveToFinalLocation()
 
 	def generateFileName(self, episodeInfo, episodeUrl):
@@ -251,6 +254,10 @@ class AniplayDownloader(GenericDownloader):
 		episodeId = self._extractEpisodeCode(apiUrl)
 		self.headers["Referer"] = "https://www.aniplay.it/download/" + episodeId
 		response = requests.get(apiUrl, headers=self.headers)
+		if response.status_code >= 400:
+			self.logging.warning("Episode not available: [" + str(response.status_code) +"]")
+			self.logging.warning("URL: [", apiUrl,"] - Headers: [", self.headers,"]")
+			return {}
 		return response.json()
 
 	@staticmethod
@@ -316,3 +323,7 @@ class AniplayDownloader(GenericDownloader):
 			finalDir = os.path.dirname(finalDir)
 		self.logging.info("Temporary directory for download: " + finalDir)
 		return finalDir
+
+
+class ImpossibleDownload(Exception):
+	pass

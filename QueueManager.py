@@ -66,6 +66,7 @@ class QueueManager:
 		# File movement
 		with self.queueLock:
 			self.queues[destination_queue].append(file)
+			self.logging.info("Added a file to queue [" + file['name'] + "]")
 			# Added a new link, check if it can be downloaded
 			self.queueLock.notifyAll()
 			return True
@@ -79,6 +80,7 @@ class QueueManager:
 		with self.queueLock:
 			for file in batchList:
 				self.queues[destination_queue].append(file)
+			self.logging.info("Added " + str(len(batchList)) + " files to queue")
 			# Added a new link, check if it can be downloaded
 			self.queueLock.notifyAll()
 			return True
@@ -89,6 +91,7 @@ class QueueManager:
 		:return: The element to download
 		"""
 		with self.queueLock:
+			self.logging.info("Requesting next available file")
 			self.queueLock.wait_for(self._available_url)
 			return self._get_next_element()
 
@@ -175,7 +178,7 @@ class QueueManager:
 				self.logging.info("File not in logging overview")
 				return idx
 			# This host has not reached the global limit per host
-			sectionName = self.dm.get_downloader(el['host']).sectionName
+			sectionName = self.dm.extractSettingsAssociation(el['host'])['settingsSectionName']
 			if queue_overview.get(el['host']) < self.configuration.get_config(sectionName, 'maxDownloadPerHost'):
 				return idx
 		raise NoElementAvailable()

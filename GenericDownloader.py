@@ -16,7 +16,6 @@ def sizeof_fmt(num, suffix='B'):
 
 
 class GenericDownloader(threading.Thread):
-	sectionName = 'GlobalSettings'
 
 	lang = {
 		'itIT': 'Italian'
@@ -44,7 +43,8 @@ class GenericDownloader(threading.Thread):
 		self.managing_file = None
 		self.tempDir = None
 		self.finalDir = None
-		self.options = self.compose_option(settings.get_config(self.sectionName))
+		sectionName = download_manager.extractSettingsAssociationFromDownloaderName(type(self).__name__)['settingsSectionName']
+		self.options = self.compose_option(settings.get_config(sectionName))
 
 	def run(self) -> None:
 		url = self.managing_file['url']
@@ -83,6 +83,7 @@ class GenericDownloader(threading.Thread):
 		:return:
 		"""
 		self.managing_file = file
+		self.logging.info("Start managing this file: [" + str(file) + "]")
 
 	def stop_download(self):
 		self.managing_file['stop'] = True

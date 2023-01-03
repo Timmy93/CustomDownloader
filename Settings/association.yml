@@ -1,0 +1,21 @@
+Association:
+
+  #Supported host
+  downloader:
+    - generic:
+        settingsSectionName: 'GlobalSettings'
+        downloaderName: 'GenericDownloader'
+        associatedDomains:
+          - 'youtube.com'
+          - 'youtu.be'
+    - crunchyroll:
+        settingsSectionName: 'CrunchyrollSettings'
+        downloaderName: 'CrunchyrollDownloader'
+        associatedDomains:
+          - 'crunchyroll.com'
+    - aniplay:
+        settingsSectionName: 'AniplaySettings'
+        downloaderName: 'AniplayDownloader'
+        associatedDomains:
+          - 'aniplay.it'
+  

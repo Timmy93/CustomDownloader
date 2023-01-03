@@ -16,8 +16,6 @@ from markupsafe import escape
 #   https://github.com/ytdl-org/youtube-dl/blob/3e4cedf9e8cd3157df2457df7274d0c842421945/youtube_dl/YoutubeDL.py#L137-L312
 
 logName = "Downloader.log"
-all_settings_dir = "Settings"
-setting_file = "settings.yml"
 app = Flask(__name__)
 dm: DownloaderManager
 
@@ -35,12 +33,12 @@ def create_absolute_path(path):
 
 
 def main():
-	global logName, setting_file, all_settings_dir, dm
+	global logName, dm
 	logging.basicConfig(
 		filename=create_absolute_path(logName),
 		level=logging.ERROR,
 		format='%(asctime)s %(levelname)-8s %(message)s')
-	setting_path = create_absolute_path(os.path.join(all_settings_dir, setting_file))
+	setting_path = create_absolute_path(os.path.join(DownloaderManager.all_settings_dir, DownloaderManager.setting_file))
 	config_class = IUBConfiguration(setting_path, logging)
 
 	print("Starting...")
@@ -57,12 +55,17 @@ def main():
 	logging.debug("Starting downloader routine")
 	dm.start()
 	port = config_class.get_config('GlobalSettings', 'port')
-	logging.debug("Starting service on port: " + str(port))
-	app.jinja_env.globals.update(get_urls=get_urls)
-	app.run(port=port, host='0.0.0.0', debug=True, use_reloader=False)
-	dm.join()
-	print("Download Manager has stopped working - Killing process")
-	logging.error("Download Manager has stopped working - Killing process")
+	try:
+		logging.debug("Starting service on port: " + str(port))
+		app.jinja_env.globals.update(get_urls=get_urls)
+		app.run(port=port, host='0.0.0.0', debug=True, use_reloader=False)
+		dm.join()
+		print("Download Manager has stopped working - Killing process")
+		logging.error("Download Manager has stopped working - Killing process")
+	except OSError as err:
+		logging.error("Cannot start service on port " + str(port) + " - EXIT")
+		print("Cannot start service on port " + str(port) + " - EXIT")
+		raise err
 	exit(1)
 
 
