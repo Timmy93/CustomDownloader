@@ -106,7 +106,7 @@ class GenericDownloader(threading.Thread):
 	def completeDownload(self, title):
 		if self.tempDir:
 			try:
-				shutil.move(os.path.join(self.tempDir, title), self.finalDir)
+				shutil.move(os.path.join(self.tempDir, title), os.path.join(self.finalDir, title))
 				self.logging.debug("Moved " + title + " from [" + self.finalDir + "] to [" + self.tempDir + "]")
 				print("Moved " + title + " from [" + self.tempDir + "] to [" + self.finalDir + "]")
 			except FileNotFoundError:

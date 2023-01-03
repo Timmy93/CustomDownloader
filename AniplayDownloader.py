@@ -5,6 +5,9 @@ import time
 import urllib.request
 from pathlib import Path
 from urllib.parse import unquote, urlparse
+from urllib.error import HTTPError
+
+import ffmpeg
 import requests
 from GenericDownloader import GenericDownloader
 
@@ -50,7 +53,7 @@ class AniplayDownloader(GenericDownloader):
 				self.logging.info("Adding episode: " + name + " [" + epLink + "]")
 		elif self.isAnEpisode(url):
 			epLink = self.parseEpisode(url)
-			episodeInfo = self._getEpisodeInfo(epLink)
+			episodeInfo = self._getDownloadEpisodeInfo(epLink)
 			if episodeInfo:
 				epName = self._createEpisodeName(episodeInfo)
 				domain = urlparse(epLink).netloc
@@ -66,7 +69,24 @@ class AniplayDownloader(GenericDownloader):
 	def _start_download(self) -> str:
 		self.logging.info("Starting download of this file: ", self.managing_file)
 		url = self.managing_file['url']
-		return self._downloadFile(url)
+		start = time.time()
+		try:
+			downloadFileLocation = self._downloadFile(url)
+		except HTTPError:
+			self.logging.warning("Direct download file not available [" + url + "] - Attempt download from streaming file")
+			downloadFileLocation = self._downloadStreamingFile(url)
+		downloadFileName = os.path.basename(downloadFileLocation)
+		end = time.time()
+		elapsed = end - start
+		size = os.path.getsize(downloadFileLocation)
+		speed = size / elapsed / 1024 / 1024
+		print("Download completed [" + downloadFileName + "]")
+		self.logging.info("Download completed [" + downloadFileName + "]")
+		print("Downloaded at " + str("%.2f" % speed) + " MB/s [" + str("%.2f" % (size / 1024 / 1024)) + "MB in " + str(
+			"%.2f" % elapsed) + "s]")
+		self.logging.info("Downloaded at " + str("%.2f" % speed) + " MB/s [" + str("%.2f" % (size / 1024 / 1024)) + "MB in " + str(
+			"%.2f" % elapsed) + "s]")
+		return downloadFileName
 
 	def _retrieveReleaseInfo(self, url: str) -> bool:
 		"""
@@ -114,35 +134,59 @@ class AniplayDownloader(GenericDownloader):
 		:param url: The url of the episode to download
 		:return: The name of the downloaded file
 		"""
-		start = time.time()
 		#Get episode info
-		episodeInfo = self._getEpisodeInfo(url)
+		episodeInfo = self._getDownloadEpisodeInfo(url)
 		if not episodeInfo:
 			self.logging.warning("Cannot extract information on this episode [", url, "] - Cannot proceed with download")
 			raise ImpossibleDownload("Cannot extract information on this episode")
 		#Get direct download link
-		episodeUrl = self.getDirectDownloadUrl(str(episodeInfo["id"]))
+		directDownloadLink = self.getDirectDownloadUrl(str(episodeInfo["id"]))
 		#Generate file name
-		name = self.generateFileName(episodeInfo, episodeUrl)
+		name = self.generateFileName(episodeInfo, directDownloadLink)
 		#Define temporary file location
 		temp_location = os.path.join(self.getTempDir(), name)
+		self.logging.info("Starting direct download")
 		#Execute download
-		urllib.request.urlretrieve(episodeUrl, temp_location, reporthook=self.download_hook)
-		end = time.time()
-		elapsed = end - start
-		size = os.path.getsize(name)
-		speed = size / elapsed / 1024 / 1024
-		print("Download completed [" + name + "]")
-		print("Downloaded at " + str("%.2f" % speed) + " MB/s [" + str("%.2f" % (size / 1024 / 1024)) + "MB in " + str(
-			"%.2f" % elapsed) + "s]")
-		return name
+		urllib.request.urlretrieve(directDownloadLink, temp_location, reporthook=self.download_hook)
+		return temp_location
 
-	def completeDownload(self, title):
-		print("Overriding complete download procedure")
-		#TODO - Complete function
-		self.moveToFinalLocation()
+	def _downloadStreamingFile(self, url: str) -> str:
+		"""
+		Start the download from Streaming Link
+		:param url: The url of the episode
+		:return: The name of the downloaded file
+		"""
+		# Get episode info
+		episodeInfo = self._getStreamingEpisodeInfo(url)
+		if not episodeInfo:
+			self.logging.warning("Cannot extract information on this episode [", url, "] - Cannot proceed with download")
+			raise ImpossibleDownload("Cannot extract information on this episode")
+		# Get direct download link
+		if not 'videoUrl' in episodeInfo or not episodeInfo['videoUrl']:
+			self.logging.warning("Missing streaming link  [" + str(url) + "] - Cannot proceed with download")
+			raise ImpossibleDownload("Missing streaming link")
+		directDownloadLink = episodeInfo['videoUrl']
+		# Generate file name
+		name = self._createEpisodeName(episodeInfo) + ".mp4"
+		# Define temporary file location
+		temp_location = os.path.join(self.getTempDir(), name)
+		# Execute download
+		self.logging.info("Starting streaming download")
+		self._downloadFileFromStreaming(directDownloadLink, temp_location, reporthook=self.download_hook)
+		return temp_location
+
+	# def completeDownload(self, title):
+	# 	print("Overriding complete download procedure")
+	# 	#TODO - Complete function
+	# 	self.moveToFinalLocation()
 
 	def generateFileName(self, episodeInfo, episodeUrl):
+		"""
+		Extract the extension from the direct download url and generates url
+		:param episodeInfo:
+		:param episodeUrl:
+		:return:
+		"""
 		name = self._createEpisodeName(episodeInfo)
 		remote_name = unquote(Path(urlparse(episodeUrl).path).name)
 		extension = Path(remote_name).suffix
@@ -223,6 +267,8 @@ class AniplayDownloader(GenericDownloader):
 			url = parse.scheme + "://" + parse.netloc + "/api/download/episode/" + str(parts[2])
 		elif parts[1] == "api" and parts[2] == "download" and parts[3] == "episode" and str(parts[4]).isnumeric():
 			pass
+		elif parts[1] == "api" and parts[2] == "episode" and str(parts[3]).isnumeric():
+			url = parse.scheme + "://" + parse.netloc + "/api/download/episode/" + str(parts[3])
 		else:
 			print("Not an episode [" + url + "]")
 			print(parse)
@@ -245,9 +291,9 @@ class AniplayDownloader(GenericDownloader):
 				result = part
 		return str(result)
 
-	def _getEpisodeInfo(self, apiUrl: str) -> dict:
+	def _getDownloadEpisodeInfo(self, apiUrl: str) -> dict:
 		"""
-		Extract the information related to a specific episode
+		Extract the information related to the download of a specific episode
 		:param apiUrl : The url to the specific episode
 		:return: The information related to the episode
 		"""
@@ -255,8 +301,24 @@ class AniplayDownloader(GenericDownloader):
 		self.headers["Referer"] = "https://www.aniplay.it/download/" + episodeId
 		response = requests.get(apiUrl, headers=self.headers)
 		if response.status_code >= 400:
-			self.logging.warning("Episode not available: [" + str(response.status_code) +"]")
+			self.logging.warning("Episode download not available: [" + str(response.status_code) +"]")
 			self.logging.warning("URL: [", apiUrl,"] - Headers: [", self.headers,"]")
+			return {}
+		return response.json()
+
+	def _getStreamingEpisodeInfo(self, url: str) -> dict:
+		"""
+		Extract the information related to the streaming of a specific episode
+		:param url : The url to the specific episode
+		:return: The information related to the episode
+		"""
+		episodeId = self._extractEpisodeCode(url)
+		apiUrl = "https://aniplay.it/api/episode/" + episodeId
+		self.headers["Referer"] = "https://www.aniplay.it/play/" + episodeId
+		response = requests.get(apiUrl, headers=self.headers)
+		if response.status_code >= 400:
+			self.logging.warning("Episode streaming not available: [" + str(response.status_code) + "]")
+			self.logging.warning("URL: [", apiUrl, "] - Headers: [", self.headers, "]")
 			return {}
 		return response.json()
 
@@ -324,6 +386,20 @@ class AniplayDownloader(GenericDownloader):
 		self.logging.info("Temporary directory for download: " + finalDir)
 		return finalDir
 
+	def _downloadFileFromStreaming(self, directStreamingLink: str, temp_location: str, reporthook: callable):
+		"""
+		Attempt download from the HLS link (m3u8) using ffmpeg
+		:param directStreamingLink: The direct link to m3u8
+		:param temp_location: Where the file will be called
+		:param reporthook: A callback function to monitor the download progress
+		:return:
+		"""
+
+		stream = ffmpeg.input(directStreamingLink)
+		output_ffmpeg = ffmpeg.output(stream, temp_location, vcodec='copy', acodec='copy')
+		output_ffmpeg = ffmpeg.overwrite_output(output_ffmpeg)
+		self.logging.info("Start downloading streaming file")
+		ffmpeg.run(output_ffmpeg, quiet=True)
 
 class ImpossibleDownload(Exception):
 	pass

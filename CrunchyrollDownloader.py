@@ -27,17 +27,23 @@ class CrunchyrollDownloader(GenericDownloader):
 			info_dict = ydl.extract_info(url, download=False)
 			videoName = ydl.prepare_filename(info_dict)
 			sub_ext = info_dict.get('requested_subtitles', {}).get(lang, {}).get('ext', None)
-			subtitleName = os.path.splitext(videoName)[0] + "." + lang + "." + sub_ext
-			self.logging.info("Downloading subtitle file: " + subtitleName)
+			if sub_ext:
+				subtitleName = os.path.splitext(videoName)[0] + "." + lang + "." + sub_ext
+				self.logging.info("Downloading subtitle file: " + subtitleName)
+			else:
+				subtitleName = None
+				self.logging.warning("Cannot extract subtitle language - Skipping selection")
 			ydl.download(url)
 
 		with yt_dlp.YoutubeDL(self.options) as ydl:
+			print("Downloading video file: " + videoName)
 			info_dict = ydl.extract_info(url, download=True)
 			videoName = ydl.prepare_filename(info_dict)
 			outputName = os.path.splitext(videoName)[0] + ".mkv"
-			print("Downloading video file: " + videoName)
 
-		self.joinVideo(videoName, subtitleName, lang, outputName)
+		if subtitleName:
+			#Impress subtitle only if found
+			self.joinVideo(videoName, subtitleName, lang, outputName)
 		self.logging.info("Downloaded file: " + outputName)
 		if os.path.isfile(outputName):
 			os.remove(subtitleName)

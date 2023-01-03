@@ -142,6 +142,8 @@ class DownloaderManager(threading.Thread):
 
 	def extractSettingsAssociation(self, domain: str) -> dict:
 		genericInfo = None
+		# Remove www if present
+		domain = domain.replace("www.", "")
 		for downloader in self.downloaderAssociation['downloader']:
 			#Check association
 			key = list(downloader.keys())[0]
