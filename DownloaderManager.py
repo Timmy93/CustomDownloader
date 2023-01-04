@@ -3,14 +3,14 @@ import logging
 import os
 import threading
 from urllib.parse import urlparse
-
 import yaml
-
-from AniplayDownloader import AniplayDownloader
 from QueueManager import QueueManager
 from IUBBaseTools import IUBConfiguration
-from CrunchyrollDownloader import CrunchyrollDownloader
-from GenericDownloader import GenericDownloader
+
+#Import all downloaders
+from Downloaders.GenericDownloader import GenericDownloader
+from Downloaders.AniplayDownloader import AniplayDownloader
+from Downloaders.CrunchyrollDownloader import CrunchyrollDownloader
 
 
 class DownloaderManager(threading.Thread):
@@ -97,7 +97,7 @@ class DownloaderManager(threading.Thread):
 		if 'dir_value' in el:
 			self.queueManager.addBatchFiles(el['dir_value'])
 		else:
-			self.queueManager.add_file(el)
+			self.queueManager.addBatchFiles([el])
 
 	def get_queue(self):
 		return self.queueManager.get_queues()

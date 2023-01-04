@@ -3,7 +3,7 @@ import os
 import yt_dlp
 import urllib.request
 
-from GenericDownloader import GenericDownloader
+from Downloaders.GenericDownloader import GenericDownloader
 
 
 class CrunchyrollDownloader(GenericDownloader):

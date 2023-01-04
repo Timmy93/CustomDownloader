@@ -47,15 +47,15 @@ class QueueManager:
 					self.queues[destination_queue].append(self.queues[source_queue].pop(idx))
 					# A download is completed, check if another file can be downloaded
 					if source_queue == "inProgress":
-						self.queueLock.notifyAll()
+						self.queueLock.notify_all()
 					return True
 			self.logging.warning("Cannot find the requested url from the list " + source_queue)
 			return False
 
-	def add_file(self, file: dict, destination_queue: str = "downloadQueue") -> bool:
+	def addBatchFiles(self, batchList: list, destination_queue: str = "downloadQueue") -> bool:
 		"""
-		Add a new file to a specific queue
-		:param file: The file to add to the queue
+		Add a list of files to a specific queue
+		:param batchList: The list of files to add to the queue
 		:param destination_queue: The queue where the file will be placed
 		:return: The append operation outcome
 		"""
@@ -65,24 +65,17 @@ class QueueManager:
 			return False
 		# File movement
 		with self.queueLock:
-			self.queues[destination_queue].append(file)
-			self.logging.info("Added a file to queue [" + file['name'] + "]")
-			# Added a new link, check if it can be downloaded
-			self.queueLock.notifyAll()
-			return True
-
-	def addBatchFiles(self, batchList: list, destination_queue: str = "downloadQueue") -> bool:
-		# Initial check
-		if destination_queue not in self.queues:
-			self.logging.error("Invalid destination queue: " + destination_queue)
-			return False
-		# File movement
-		with self.queueLock:
+			count = 0
 			for file in batchList:
-				self.queues[destination_queue].append(file)
-			self.logging.info("Added " + str(len(batchList)) + " files to queue")
+				url = file['url']
+				if self.already_managing(url):
+					self.logging.info("Already downloading: [" + url + "] - Skip")
+				else:
+					self.queues[destination_queue].append(file)
+					count += 1
+			self.logging.info("Added " + str(count) + " files to queue")
 			# Added a new link, check if it can be downloaded
-			self.queueLock.notifyAll()
+			self.queueLock.notify_all()
 			return True
 
 	def get_next_file(self) -> dict:
@@ -96,6 +89,11 @@ class QueueManager:
 			return self._get_next_element()
 
 	def already_managing(self, url: str) -> bool:
+		"""
+		Check if the given url is already managed
+		:param url: The url to check
+		:return: True if the url is already managed, False otherwise
+		"""
 		significant_queues = ['downloadQueue', 'inProgress', 'paused']
 		with self.queueLock:
 			for queue in significant_queues:

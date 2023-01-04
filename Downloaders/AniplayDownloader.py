@@ -9,7 +9,7 @@ from urllib.error import HTTPError
 
 import ffmpeg
 import requests
-from GenericDownloader import GenericDownloader
+from Downloaders.GenericDownloader import GenericDownloader
 
 
 class AniplayDownloader(GenericDownloader):
@@ -44,6 +44,11 @@ class AniplayDownloader(GenericDownloader):
 			self.logging.info("Managing this release: [" + url + "]")
 			releaseLink = self.parseRelease(url)
 			self._retrieveReleaseInfo(releaseLink)
+			#Extract season episodes
+			if "seasons" in self.release and self.release["seasons"]:
+				for seasonInfo in self.release["seasons"]:
+					self.release["episodes"] += self._retrieveSeasonEpisodes(seasonInfo)
+			#Analyze all episodes
 			for episodeInfo in self.release["episodes"]:
 				name = self._createEpisodeName(episodeInfo)
 				episodeId = str(episodeInfo["id"])
@@ -172,13 +177,9 @@ class AniplayDownloader(GenericDownloader):
 		temp_location = os.path.join(self.getTempDir(), name)
 		# Execute download
 		self.logging.info("Starting streaming download")
+		print("Starting streaming download")
 		self._downloadFileFromStreaming(directDownloadLink, temp_location, reporthook=self.download_hook)
 		return temp_location
-
-	# def completeDownload(self, title):
-	# 	print("Overriding complete download procedure")
-	# 	#TODO - Complete function
-	# 	self.moveToFinalLocation()
 
 	def generateFileName(self, episodeInfo, episodeUrl):
 		"""
@@ -400,6 +401,23 @@ class AniplayDownloader(GenericDownloader):
 		output_ffmpeg = ffmpeg.overwrite_output(output_ffmpeg)
 		self.logging.info("Start downloading streaming file")
 		ffmpeg.run(output_ffmpeg, quiet=True)
+
+	def _retrieveSeasonEpisodes(self, seasonInfo: dict) -> list:
+		"""
+		Extract the episode list from the season information
+		:param seasonInfo: The season information
+		:return: The list of episodes information
+		"""
+		animeId = str(seasonInfo['animeId'])
+		seasonId = str(seasonInfo['id'])
+		self.logging.info("Extracting episodes from season: " + seasonInfo['name'] + " [" + seasonId + "]")
+		url = "https://aniplay.it/api/anime/" + animeId + "/season/" + seasonId
+		refererUrl = "https://aniplay.it/anime/" + animeId
+		headers = self.headers
+		headers["Referer"] = refererUrl
+		response = requests.get(url, headers=headers)
+		return response.json()
+
 
 class ImpossibleDownload(Exception):
 	pass
