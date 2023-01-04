@@ -11,7 +11,7 @@
     {% for file in value %}
       <li><div class="queue">
           {% if 'status' in file %}
-          Progress: {{ file.status }}% -
+          [{{ file.status }}%] -
           {% endif %}
           {{ file.name }} [{{ file.url }}]
       </div></li>

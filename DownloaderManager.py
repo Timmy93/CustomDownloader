@@ -116,8 +116,8 @@ class DownloaderManager(threading.Thread):
 		self.logging.info("Dynamically created an instance of: " + className)
 		return instance
 
-	def update_download_progress(self, filename: str, percentage: float):
-		self.queueManager.update_download_progress(filename, percentage)
+	def update_download_progress(self, url: str, percentage: float):
+		self.queueManager.update_download_progress(url, percentage)
 
 	def loadAssociationList(self) -> dict:
 		"""

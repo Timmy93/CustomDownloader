@@ -102,18 +102,12 @@ class QueueManager:
 						return True
 			return False
 
-	def update_download_progress(self, filename: str, percentage: float):
-		pass
-		# TODO Currently not working save reference to correct downloader
-		# with self.queueLock:
-		# 	for file in self.queues['downloadQueue']:
-		# 		if file["name"] == filename:
-		# 			file["status"] = percentage
-		# 			self.logging.info("Updated percentage for this file " + file["name"])
-		# 			return
-		# 		else:
-		# 			self.logging.info("Different name: [" + filename + "] - [" + file["name"] + "] - SKIP")
-		# 	print("File [" + filename + "] updated, status:" + str(percentage))
+	def update_download_progress(self, url: str, percentage: float):
+		with self.queueLock:
+			for file in self.queues['inProgress']:
+				if file["url"] == url:
+					file["status"] = percentage
+					return
 
 	def _get_queue_overview(self, queue: str = 'inProgress'):
 		"""

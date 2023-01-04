@@ -201,7 +201,7 @@ class AniplayDownloader(GenericDownloader):
 		if percentage != self.percentage:
 			self.percentage = percentage
 			print(str("%.2f" % self.percentage) + "% - Downloaded " + str("%.2f" % (downloadSize / 1024 / 1024)) + "MB of " + str("%.2f" % (totalSize / 1024 / 1024)) + "MB")
-		#TODO Use this hook
+		self.download_manager.update_download_progress(self.managing_file['url'], self.percentage)
 
 	def _createEpisodeName(self, episodeInfo) -> str:
 		"""

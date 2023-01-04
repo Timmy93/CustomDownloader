@@ -192,7 +192,7 @@ class GenericDownloader(threading.Thread):
 			# print(
 			# 	"Downloading " + str(percentage) + "% (" + str(downloaded_bytes) + "/" + str(size_in_bytes) + " bytes) [" + filename +
 			# 	"] - Elapsed: " + time + "s - ETA: " + str(d['eta']) + "s")
-			self.download_manager.update_download_progress(filename, percentage)
+			self.download_manager.update_download_progress(self.managing_file['url'], percentage)
 		else:
 			print("Unexpected error during download: " + str(d))
 
