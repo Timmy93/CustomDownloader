@@ -1,22 +1,23 @@
 <!doctype html>
 <title>IUB - Download Manager</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="{{url_for('static', filename='app.js')}}"></script>
 <nav>
   <h1>IUB - Download Manager</h1>
 </nav>
 <section class="content">
   {% for key, value in get_urls().items() %}
-    <h1>{{ key }}</h1>
-      <ul>
+    <h1 class="queue">{{ key }}</h1>
+
     {% for file in value %}
-      <li><div class="queue">
+      <p class="queue" data-url="{{ file.url }}">
+          <i class="stop_download">X</i>
           {% if 'status' in file %}
-          [{{ file.status }}%] -
+          <span class="progress">[{{ file.status }}%]</span> -
           {% endif %}
-          {{ file.name }} [{{ file.url }}]
-      </div></li>
+          <span class="name">{{ file.name }}</span><span class="url">{{ file.url }}</span>
+      </p>
     {% endfor %}
-      </ul>
  {% endfor %}
   <form method="post" action="/add">
     <label for="new_url">Url</label>

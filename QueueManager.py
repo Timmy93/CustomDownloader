@@ -102,6 +102,21 @@ class QueueManager:
 						return True
 			return False
 
+	def delete_from_queue(self, url: str) -> bool:
+		"""
+		Remove a certain url from the queue
+		:param url: The url to remove
+		:return: True if the file is successfully removed
+		"""
+		with self.queueLock:
+			queue = self.queues['downloadQueue']
+			for file in queue:
+				if file["url"] == url:
+					queue.remove(file)
+					return True
+			return False
+
+
 	def update_download_progress(self, url: str, percentage: float):
 		with self.queueLock:
 			for file in self.queues['inProgress']:

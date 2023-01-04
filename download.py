@@ -103,7 +103,8 @@ def test1():
 	new_url = request.form.get('new_url')
 	dm.request_download(new_url)
 	print("Added new url [" + new_url + "]")
-	return escape("Added new url [" + new_url + "]")
+	return render_template('base.html')
+	#return escape("Added new url [" + new_url + "]")
 
 
 @app.route("/add", methods=['GET'])
@@ -134,6 +135,15 @@ def stop_download():
 	#todo
 	urls = DownloaderManager.supportedHost
 	return jsonify(urls)
+
+
+@app.route("/delete", methods=['POST'])
+def delete_download():
+	delete_url = request.json
+	if dm.cancel_download(delete_url):
+		return jsonify({"success": True, "url_deleted": delete_url})
+	else:
+		return jsonify({"success": False})
 
 
 if __name__ == "__main__":

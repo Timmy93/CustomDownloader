@@ -79,6 +79,19 @@ class DownloaderManager(threading.Thread):
 		self.logging.info("Download failed: [" + file["url"] + "]")
 		return self.queueManager.change_queue(file["url"], 'inProgress', 'downloadFailed')
 
+	def cancel_download(self, url: str) -> bool:
+		"""
+		Cancel a download
+		:param url:
+		:return:
+		"""
+		if url:
+			self.logging.info("Deleting url: " + str(url))
+			return self.queueManager.delete_from_queue(url)
+		else:
+			self.logging.warning("No url to delete received")
+			return False
+
 	def request_download(self, url: str):
 		"""
 		Add a new url to the list of link to manage
