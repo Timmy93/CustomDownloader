@@ -4,12 +4,17 @@ from threading import Condition
 import copy
 from typing import Union
 
-
 class NoElementAvailable(Exception):
 	pass
 
 
 class QueueManager:
+
+	DOWNLOAD_QUEUE = "downloadQueue"
+	DOWNLOAD_FAILED = "downloadFailed"
+	DOWNLOAD_ACTIVE = "inProgress"
+	DOWNLOAD_PAUSED = "paused"
+	DOWNLOAD_COMPLETED = "downloadCompleted"
 
 	def __init__(self, settings: 'IUBConfiguration', logging_handler: 'logging', dm: 'DownloaderManager'):
 		self.dm = dm

@@ -181,3 +181,26 @@ class DownloaderManager(threading.Thread):
 				return downloader[key]
 		self.logging.error("Missing information for this downloader [" + className + "] - EXIT")
 		exit(1)
+
+	def loadHistory(self):
+		"""
+		Load the history from a file populates the different queue
+		:return:
+		"""
+		#Load history
+		with open('history.yml', 'r') as f:
+			rawList = yaml.safe_load(f)
+		#Parse
+		rawList[QueueManager.DOWNLOAD_QUEUE] = rawList[QueueManager.DOWNLOAD_ACTIVE] + rawList[QueueManager.DOWNLOAD_QUEUE]
+		rawList[QueueManager.DOWNLOAD_ACTIVE] = []
+		#Load
+		for queue in rawList:
+			self.queueManager.addBatchFiles(rawList[queue], queue)
+
+	def saveHistory(self):
+		finalList = {}
+		#Load history
+		queues = self.get_queue()
+		#Store
+		with open('history.yml', 'w') as f:
+			yaml.safe_dump(queues, f)

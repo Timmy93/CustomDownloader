@@ -5,22 +5,90 @@ body {
   color: #444;
 }
 
-p {
-    background-color: white;
+
+
+/*All titles*/
+h1 {
+  margin-left: 10px;
 }
 
-.new {
-    background-color: green;
+/*Main title*/
+nav h1 {
+  text-align: center;
+  padding: 11px;
+  margin: 0;
+  background-color: aliceblue;
 }
 
-.removing{
-    background-color: red;
-    font-weight: bold;
+section h1::before {
+  content: "\27A4";
+  padding-right: 8px;
 }
 
-i.stop_download {
-    color: darkred;
-    font-weight: bold;
-    border: 1px solid darkred;
-    border-radius: 20px;
+/*All lines*/
+p.queue {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 3px 6px;
+  align-items: flex-start;
+  padding: 6px;
+  margin: 3px 10px;
+  border: solid black 0;
+  border-radius: 6px;
 }
+
+p.queue:hover {
+  background-color: #9f9f9f2b;
+}
+
+/*New line*/
+p.queue.new {
+  background-color: green;
+  transition: all 0.5s ease-out;
+}
+
+/*Removing line*/
+p.queue.removing {
+  background-color: red;
+  transition: all 0.5s ease-out;
+}
+
+/*Name line*/
+p.queue span.name {
+  flex: 1;
+  color: black;
+}
+
+/*URL line*/
+p.queue span.url {
+  font-style: italic;
+  font-size: small;
+  padding-left: 18px;
+  flex: 0 0 100%;
+}
+
+p.queue span.url::before {
+  content: "🌍";
+  font-style: normal;
+  padding-right: 3px;
+}
+
+/*Progress bar*/
+p.queue span.progress {
+ border: black solid 0;
+ border-radius: 15px;
+ background: linear-gradient(to right, #89ee89 100%, white 10%);
+}
+
+
+/*Delete download button*/
+p.queue i.stop_download {
+  color: darkred;
+  font-weight: bold;
+  flex-basis: 10px;
+  flex-grow: 0;
+  flex-shrink: 0;
+  align-self: center;
+}
+

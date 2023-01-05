@@ -43,6 +43,7 @@ def main():
 
 	print("Starting...")
 	dm = DownloaderManager(config_class, logging)
+	dm.loadHistory()
 
 	if config_class.get_config('GlobalSettings', 'commandLineEnabled'):
 		logging.debug("Retrieving files from command line")
@@ -60,6 +61,7 @@ def main():
 		app.jinja_env.globals.update(get_urls=get_urls)
 		app.run(port=port, host='0.0.0.0', debug=True, use_reloader=False)
 		dm.join()
+		dm.saveHistory()
 		print("Download Manager has stopped working - Killing process")
 		logging.error("Download Manager has stopped working - Killing process")
 	except OSError as err:
@@ -144,6 +146,11 @@ def delete_download():
 		return jsonify({"success": True, "url_deleted": delete_url})
 	else:
 		return jsonify({"success": False})
+
+@app.route("/store", methods=['GET'])
+def store_download():
+	dm.saveHistory()
+	return jsonify({"success": True})
 
 
 if __name__ == "__main__":

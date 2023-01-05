@@ -18,6 +18,7 @@ function stopDownload(event){
                 parentNode.remove()
             } else {
                 console.log("Cannot delete the requested element")
+                parentNode.classList.remove("removing")
             }
 
         })
