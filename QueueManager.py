@@ -29,7 +29,11 @@ class QueueManager:
 		}
 		self.queueLock = Condition()
 
-	def get_queues(self):
+	def get_queues(self) -> dict:
+		"""
+		Return a copy of the current queues
+		:return:
+		"""
 		return copy.deepcopy(self.queues)
 
 	def change_queue(self, url: str, source_queue: str, destination_queue: str) -> bool:
@@ -99,9 +103,8 @@ class QueueManager:
 		:param url: The url to check
 		:return: True if the url is already managed, False otherwise
 		"""
-		significant_queues = ['downloadQueue', 'inProgress', 'paused']
 		with self.queueLock:
-			for queue in significant_queues:
+			for queue in self.queues:
 				for el in self.queues[queue]:
 					if el['url'] == url:
 						return True
@@ -109,20 +112,28 @@ class QueueManager:
 
 	def delete_from_queue(self, url: str) -> bool:
 		"""
-		Remove a certain url from the queue
+		Remove a certain url from the queue - DOES not delete ele
 		:param url: The url to remove
 		:return: True if the file is successfully removed
 		"""
 		with self.queueLock:
-			queue = self.queues['downloadQueue']
-			for file in queue:
-				if file["url"] == url:
-					queue.remove(file)
-					return True
+			relevantQueues = list(self.queues.keys())
+			relevantQueues.remove(self.DOWNLOAD_ACTIVE)
+			for queue in relevantQueues:
+				for file in self.queues[queue]:
+					if file["url"] == url:
+						self.queues[queue].remove(file)
+						return True
+			#Element not found
 			return False
 
-
 	def update_download_progress(self, url: str, percentage: float):
+		"""
+		Update the download status of a certain file
+		:param url: The file to update
+		:param percentage: The current download percentage
+		:return:
+		"""
 		with self.queueLock:
 			for file in self.queues['inProgress']:
 				if file["url"] == url:
