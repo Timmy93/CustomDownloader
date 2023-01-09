@@ -395,7 +395,7 @@ class AniplayDownloader(GenericDownloader):
 		:param reporthook: A callback function to monitor the download progress
 		:return:
 		"""
-		stream = ffmpeg.input(directStreamingLink)
+		stream = ffmpeg.input(directStreamingLink, headers='referer: https://aniplay.it/')
 		output_ffmpeg = ffmpeg.output(stream, temp_location, vcodec='copy', acodec='copy')
 		output_ffmpeg = ffmpeg.overwrite_output(output_ffmpeg)
 		self.logging.info("Start downloading streaming file")
