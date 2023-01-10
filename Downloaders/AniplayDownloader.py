@@ -222,6 +222,8 @@ class AniplayDownloader(GenericDownloader):
 			# Extract info on the release if missing
 			self.logging.info("Extracting info on this release [" + str(episodeInfo["animeId"]) + "]")
 			self._retrieveReleaseInfo(self.parseRelease(releaseId=episodeInfo["animeId"]))
+		if "episodeNumber" not in self.release or not self.release["episodeNumber"]:
+			self.release["episodeNumber"] = 0
 		episodeNumber = str(episodeInfo["episodeNumber"]).zfill(max(2, len(str(self.release["episodeNumber"]))))
 		seasonNumber = "01"
 		name = self.release["title"] + " - S" + seasonNumber + "E" + episodeNumber
