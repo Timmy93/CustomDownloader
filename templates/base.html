@@ -10,8 +10,8 @@
     <h1 class="queue">{{ key }}</h1>
 
     {% for file in value %}
-      <p class="queue" data-url="{{ file.url }}">
-          <i class="stop_download">X</i>
+      <p class="queue" data-url="{{ file.url }}" data-queue="{{ key }}">
+          <i class="action_button stop_download">X</i>
           {% if 'status' in file %}
           <span class="progress">[{{ file.status }}%]</span> -
           {% endif %}

@@ -92,6 +92,21 @@ class DownloaderManager(threading.Thread):
 			self.logging.warning("No url to delete received")
 			return False
 
+	def restart_download(self, url: str) -> bool:
+		"""
+		Try to restore the download of an url
+		:param url: The failed url to restore
+		:return: True if the restart was successful, false otherwise
+		"""
+		if url:
+			self.logging.info("Restarting url: " + str(url))
+			file, queue = self.queueManager.retrieveFileFromUrl(url, [QueueManager.DOWNLOAD_FAILED])
+			self.queueManager.delete_file_from_queue(file, queue)
+			return self.queueManager.addBatchFiles([file])
+		else:
+			self.logging.warning("No url to delete received")
+			return False
+
 	def request_download(self, url: str):
 		"""
 		Add a new url to the list of link to manage

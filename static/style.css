@@ -5,8 +5,6 @@ body {
   color: #444;
 }
 
-
-
 /*All titles*/
 h1 {
   margin-left: 10px;
@@ -81,14 +79,20 @@ p.queue span.progress {
  background: linear-gradient(to right, #89ee89 100%, white 10%);
 }
 
-
-/*Delete download button*/
-p.queue i.stop_download {
-  color: darkred;
-  font-weight: bold;
+/*Action buttons*/
+p.queue i.action_button {
   flex-basis: 10px;
   flex-grow: 0;
   flex-shrink: 0;
   align-self: center;
+  font-weight: bold;
 }
 
+/*Delete download button*/
+i.stop_download {
+  color: darkred;
+}
+
+i.restart_download {
+  color: green;
+}
