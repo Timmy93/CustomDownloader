@@ -4,6 +4,7 @@ from threading import Condition
 import copy
 from typing import Union
 
+
 class NoElementAvailable(Exception):
 	pass
 
@@ -112,20 +113,45 @@ class QueueManager:
 
 	def delete_from_queue(self, url: str) -> bool:
 		"""
-		Remove a certain url from the queue - DOES not delete ele
+		Remove a certain url from the queue - DOES not delete element form active queue
 		:param url: The url to remove
 		:return: True if the file is successfully removed
 		"""
 		with self.queueLock:
 			relevantQueues = list(self.queues.keys())
 			relevantQueues.remove(self.DOWNLOAD_ACTIVE)
+			file, queue = self.retrieveFileFromUrl(url, relevantQueues)
+			return self.delete_file_from_queue(file, queue)
+
+	def delete_file_from_queue(self, file: dict, queue: str) -> bool:
+		"""
+		Delete a certain file from a queue
+		:param file: The file to delete
+		:param queue: The queue name
+		:return: The deletion outcome
+		"""
+		with self.queueLock:
+			if file:
+				self.queues[queue].remove(file)
+				return True
+			else:
+				#Element not found
+				return False
+
+	def retrieveFileFromUrl(self, url: str, relevantQueues: list):
+		"""
+		Extract the file and the queue name where the file is located
+		:param url: The url to find
+		:param relevantQueues: The queues where the file will bea searched
+		:return: The file and the queue
+		"""
+		with self.queueLock:
 			for queue in relevantQueues:
 				for file in self.queues[queue]:
 					if file["url"] == url:
-						self.queues[queue].remove(file)
-						return True
-			#Element not found
-			return False
+						return file, queue
+			return None
+
 
 	def update_download_progress(self, url: str, percentage: float):
 		"""

@@ -152,6 +152,15 @@ class AniplayDownloader(GenericDownloader):
 		temp_location = os.path.join(self.getTempDir(), name)
 		self.logging.info("Starting direct download")
 		#Execute download
+		opener = urllib.request.build_opener()
+		opener.addheaders = [
+			('Referer', 'https://aniplay.it/'),
+			('User-Agent', self.headers['User-Agent']),
+			('Sec-Fetch-Site', 'cross-site'),
+			('Sec-Fetch-Mode', 'navigate'),
+			('Sec-Fetch-Dest', 'document')
+		]
+		urllib.request.install_opener(opener)
 		urllib.request.urlretrieve(directDownloadLink, temp_location, reporthook=self.download_hook)
 		return temp_location
 
