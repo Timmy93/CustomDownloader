@@ -42,6 +42,8 @@ class DownloaderManager(threading.Thread):
 		super().__init__()
 		self.queueManager = QueueManager(settings, logging, self)
 		self.downloaderAssociation = self.loadAssociationList()
+		self.registeredDownload = []
+		self.registrationLock = threading.Condition()
 		self.downloadFailed = []
 		self.inProgress = []
 		self.paused = []
@@ -69,14 +71,57 @@ class DownloaderManager(threading.Thread):
 			else:
 				self.logging.info("Received invalid download file, ignoring it")
 
+	def registerDownloader(self, url: str, downloader: GenericDownloader):
+		"""
+		Associate an url to the relative downloader
+		:param url:
+		:param downloader:
+		:return:
+		"""
+		with self.registrationLock:
+			self.registeredDownload.append({'url': url, 'downloader': downloader})
+
+	def unregisterDownloader(self, url):
+		"""
+		Remove the association to a downloader of the url
+		:param url:
+		:return:
+		"""
+		with self.registrationLock:
+			for registration in self.registeredDownload:
+				if registration['url'] == url:
+					self.registeredDownload.remove(registration)
+
 	def complete_this_download(self, file: dict):
 		return self.queueManager.change_queue(file["url"], 'inProgress', 'downloadCompleted')
 
+	def request_pause_this_download(self, file: dict):
+		"""
+		Send a request to pause a download
+		:param file:
+		:return:
+		"""
+		for registration in self.registeredDownload:
+			if registration['url'] == file['url']:
+				self.logging.info("Sendind request for pausing this download: " + file['url'])
+				registration['downloader'].stop_download()
+
 	def pause_this_download(self, file: dict):
+		"""
+		Stop of an active download
+		:param file: The file to stop download
+		:return:
+		"""
 		return self.queueManager.change_queue(file["url"], 'inProgress', 'paused')
 
 	def fail_this_download(self, file: dict):
+		"""
+		Handle all the activities related to the download failure
+		:param file: The file that cannot be downloaded
+		:return:
+		"""
 		self.logging.info("Download failed: [" + file["url"] + "]")
+		self.unregisterDownloader(file["url"])
 		return self.queueManager.change_queue(file["url"], 'inProgress', 'downloadFailed')
 
 	def cancel_download(self, url: str) -> bool:
@@ -86,8 +131,13 @@ class DownloaderManager(threading.Thread):
 		:return:
 		"""
 		if url:
-			self.logging.info("Deleting url: " + str(url))
-			return self.queueManager.delete_from_queue(url)
+			file, queue = self.queueManager.retrieveFileFromUrl(url, QueueManager.ALL_QUEUES)
+			if queue == QueueManager.DOWNLOAD_ACTIVE:
+				self.logging.info("Pausing download: " + str(url))
+				self.request_pause_this_download(file)
+			else:
+				self.logging.info("Deleting url: " + str(url))
+				return self.queueManager.delete_from_queue(url)
 		else:
 			self.logging.warning("No url to delete received")
 			return False

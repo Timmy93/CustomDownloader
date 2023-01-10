@@ -6,3 +6,4 @@ MarkupSafe>=2.1.1
 IUBBaseTools~=0.0.7
 psutil>=5.9.4
 requests>=2.28.1
+Unidecode

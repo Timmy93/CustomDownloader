@@ -16,6 +16,7 @@ class QueueManager:
 	DOWNLOAD_ACTIVE = "inProgress"
 	DOWNLOAD_PAUSED = "paused"
 	DOWNLOAD_COMPLETED = "downloadCompleted"
+	ALL_QUEUES = [DOWNLOAD_QUEUE, DOWNLOAD_FAILED, DOWNLOAD_ACTIVE, DOWNLOAD_PAUSED, DOWNLOAD_COMPLETED]
 
 	def __init__(self, settings: 'IUBConfiguration', logging_handler: 'logging', dm: 'DownloaderManager'):
 		self.dm = dm
@@ -151,7 +152,6 @@ class QueueManager:
 					if file["url"] == url:
 						return file, queue
 			return None
-
 
 	def update_download_progress(self, url: str, percentage: float):
 		"""

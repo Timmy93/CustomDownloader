@@ -48,6 +48,7 @@ class GenericDownloader(threading.Thread):
 
 	def run(self) -> None:
 		url = self.managing_file['url']
+		self.download_manager.registerDownloader(url, self)
 		try:
 			title = self._start_download()
 			self.completeDownload(title)
@@ -86,6 +87,11 @@ class GenericDownloader(threading.Thread):
 		self.logging.info("Start managing this file: [" + str(file) + "]")
 
 	def stop_download(self):
+		"""
+		Set the parameter to stop the download
+		:return:
+		"""
+		self.logging.info("Pausing download of: " + self.managing_file['url'])
 		self.managing_file['stop'] = True
 
 	def _start_download(self) -> str:
@@ -167,11 +173,10 @@ class GenericDownloader(threading.Thread):
 		return output_settings
 
 	def check_download_to_stop(self):
-		for download_file in self.managing_file:
-			if 'stop' in download_file and download_file['stop']:
-				self.logging.info("Stopping download [" + download_file['url'] + "]")
-				print("Stopping download  [" + download_file['url'] + "]")
-				raise StopDownload("Stopping download  [" + download_file['url'] + "]")
+		if 'stop' in self.managing_file and self.managing_file['stop']:
+			self.logging.info("Stopping download [" + self.managing_file['url'] + "]")
+			print("Stopping download  [" + self.managing_file['url'] + "]")
+			raise StopDownload("Stopping download  [" + self.managing_file['url'] + "]")
 
 	def my_hook(self, d: dict):
 		time = str("{:0>8}".format(str(timedelta(seconds=d['elapsed'])))) if 'elapsed' in d else ""

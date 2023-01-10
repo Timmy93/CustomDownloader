@@ -6,9 +6,10 @@ import urllib.request
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 from urllib.error import HTTPError
-
 import ffmpeg
 import requests
+from unidecode import unidecode
+
 from Downloaders.GenericDownloader import GenericDownloader
 
 
@@ -382,10 +383,11 @@ class AniplayDownloader(GenericDownloader):
 
 	@staticmethod
 	def makeSafeFilename(inputFilename):
+		unidecodedName = unidecode(inputFilename)
 		#Set here the valid chars
-		safechars = string.ascii_letters + string.digits + "~ -_."
+		safechars = string.ascii_letters + string.digits + "~ -_.[]()"
 		finalName = ""
-		for char in inputFilename:
+		for char in unidecodedName:
 			if char in safechars:
 				finalName = finalName + char
 		return finalName
