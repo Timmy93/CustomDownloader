@@ -177,7 +177,7 @@ class AniplayDownloader(GenericDownloader):
 			self.logging.warning("Cannot extract information on this episode [", url, "] - Cannot proceed with download")
 			raise ImpossibleDownload("Cannot extract information on this episode")
 		# Get direct download link
-		if not 'videoUrl' in episodeInfo or not episodeInfo['videoUrl']:
+		if 'videoUrl' not in episodeInfo or not episodeInfo['videoUrl']:
 			self.logging.warning("Missing streaming link  [" + str(url) + "] - Cannot proceed with download")
 			raise ImpossibleDownload("Missing streaming link")
 		directDownloadLink = episodeInfo['videoUrl']
@@ -231,6 +231,7 @@ class AniplayDownloader(GenericDownloader):
 		if 'title' in episodeInfo and episodeInfo["title"]:
 			episodeTitle = episodeInfo["title"]
 			name = name + " - " + episodeTitle
+		name = name + "[Aniplay]"
 		return self.makeSafeFilename(name)
 
 	@staticmethod
@@ -314,8 +315,8 @@ class AniplayDownloader(GenericDownloader):
 		self.headers["Referer"] = "https://www.aniplay.it/download/" + episodeId
 		response = requests.get(apiUrl, headers=self.headers)
 		if response.status_code >= 400:
-			self.logging.warning("Episode download not available: [" + str(response.status_code) +"]")
-			self.logging.warning("URL: [", apiUrl,"] - Headers: [", self.headers,"]")
+			self.logging.warning("Episode download not available: [" + str(response.status_code) + "]")
+			self.logging.warning("URL: [" + apiUrl + "] - Headers: [" + str(self.headers) + "]")
 			return {}
 		return response.json()
 
@@ -331,7 +332,7 @@ class AniplayDownloader(GenericDownloader):
 		response = requests.get(apiUrl, headers=self.headers)
 		if response.status_code >= 400:
 			self.logging.warning("Episode streaming not available: [" + str(response.status_code) + "]")
-			self.logging.warning("URL: [", apiUrl, "] - Headers: [", self.headers, "]")
+			self.logging.warning("URL: [" + apiUrl + "] - Headers: [" + str(self.headers) + "]")
 			return {}
 		return response.json()
 
