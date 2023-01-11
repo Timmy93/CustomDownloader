@@ -231,7 +231,7 @@ class AniplayDownloader(GenericDownloader):
 		if 'title' in episodeInfo and episodeInfo["title"]:
 			episodeTitle = episodeInfo["title"]
 			name = name + " - " + episodeTitle
-		name = name + "[Aniplay]"
+		name = name + " [Aniplay]"
 		return self.makeSafeFilename(name)
 
 	@staticmethod
