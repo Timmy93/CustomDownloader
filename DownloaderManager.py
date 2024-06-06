@@ -253,14 +253,18 @@ class DownloaderManager(threading.Thread):
 		:return:
 		"""
 		#Load history
-		with open('history.yml', 'r') as f:
-			rawList = yaml.safe_load(f)
-		#Parse
-		rawList[QueueManager.DOWNLOAD_QUEUE] = rawList[QueueManager.DOWNLOAD_ACTIVE] + rawList[QueueManager.DOWNLOAD_QUEUE]
-		rawList[QueueManager.DOWNLOAD_ACTIVE] = []
-		#Load
-		for queue in rawList:
-			self.queueManager.addBatchFiles(rawList[queue], queue)
+		filename = 'history.yml'
+		if os.path.isfile(filename):
+			with open('history.yml', 'r') as f:
+				rawList = yaml.safe_load(f)
+			#Parse
+			rawList[QueueManager.DOWNLOAD_QUEUE] = rawList[QueueManager.DOWNLOAD_ACTIVE] + rawList[QueueManager.DOWNLOAD_QUEUE]
+			rawList[QueueManager.DOWNLOAD_ACTIVE] = []
+			#Load
+			for queue in rawList:
+				self.queueManager.addBatchFiles(rawList[queue], queue)
+		else:
+			print("No history file found")
 
 	def saveHistory(self):
 		finalList = {}
